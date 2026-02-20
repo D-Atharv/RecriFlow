@@ -1,0 +1,206 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  ADMIN
+  RECRUITER
+  INTERVIEWER
+  HIRING_MANAGER
+}
+
+enum JobStatus {
+  OPEN
+  ON_HOLD
+  CLOSED
+}
+
+enum CandidateSource {
+  LINKEDIN
+  REFERRAL
+  JOB_BOARD
+  AGENCY
+  DIRECT_APPLICATION
+  OTHER
+}
+
+enum PipelineStage {
+  APPLIED
+  SCREENING
+  TECHNICAL_L1
+  TECHNICAL_L2
+  SYSTEM_DESIGN
+  HR
+  OFFER
+  HIRED
+  REJECTED
+  WITHDRAWN
+}
+
+enum RoundType {
+  SCREENING
+  TECHNICAL_L1
+  TECHNICAL_L2
+  SYSTEM_DESIGN
+  HR
+  CULTURE_FIT
+  FINAL
+}
+
+enum RoundStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum Recommendation {
+  STRONG_YES
+  YES
+  NO
+  STRONG_NO
+}
+
+enum RejectionCategory {
+  TECHNICAL_GAP
+  COMMUNICATION
+  EXPERIENCE_MISMATCH
+  CULTURAL_FIT
+  SALARY_EXPECTATIONS
+  NOTICE_PERIOD
+  NO_SHOW
+  WITHDREW
+  POSITION_CLOSED
+  OTHER
+}
+
+enum SyncStatus {
+  SUCCESS
+  FAILED
+  PENDING
+}
+
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  full_name     String
+  company_name  String?
+  password_hash String
+  role          UserRole @default(RECRUITER)
+  avatar_url    String?
+  is_active     Boolean  @default(true)
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  created_jobs        Job[]            @relation("JobCreator")
+  assigned_candidates Candidate[]      @relation("RecruiterCandidates")
+  interview_rounds    InterviewRound[] @relation("AssignedInterviewer")
+  feedback_submitted  Feedback[]
+}
+
+model Job {
+  id              String    @id @default(uuid())
+  title           String
+  department      String
+  description     String    @db.Text
+  required_skills String[]
+  experience_min  Float
+  experience_max  Float
+  status          JobStatus @default(OPEN)
+  created_by_id   String
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+
+  created_by User        @relation("JobCreator", fields: [created_by_id], references: [id])
+  candidates Candidate[]
+}
+
+model Candidate {
+  id                   String          @id @default(uuid())
+  full_name            String
+  email                String          @unique
+  phone                String?
+  current_role         String?
+  current_company      String?
+  total_experience_yrs Float?
+  skills               String[]
+  resume_url           String
+  resume_raw_text      String          @db.Text
+  linkedin_url         String?
+  source               CandidateSource @default(OTHER)
+  current_stage        PipelineStage   @default(APPLIED)
+  job_id               String
+  recruiter_id         String
+  notes                String?         @db.Text
+  created_at           DateTime        @default(now())
+  updated_at           DateTime        @updatedAt
+
+  job              Job              @relation(fields: [job_id], references: [id])
+  recruiter        User             @relation("RecruiterCandidates", fields: [recruiter_id], references: [id])
+  interview_rounds InterviewRound[]
+  rejection        RejectionReason?
+  sync_logs        SyncLog[]
+}
+
+model InterviewRound {
+  id             String      @id @default(uuid())
+  candidate_id   String
+  round_number   Int
+  round_type     RoundType
+  interviewer_id String
+  scheduled_at   DateTime?
+  status         RoundStatus @default(SCHEDULED)
+  created_at     DateTime    @default(now())
+  updated_at     DateTime    @updatedAt
+
+  candidate   Candidate @relation(fields: [candidate_id], references: [id])
+  interviewer User      @relation("AssignedInterviewer", fields: [interviewer_id], references: [id])
+  feedback    Feedback?
+
+  @@unique([candidate_id, round_number])
+}
+
+model Feedback {
+  id                     String         @id @default(uuid())
+  round_id               String         @unique
+  interviewer_id         String
+  technical_rating       Int
+  communication_rating   Int
+  problem_solving_rating Int
+  culture_fit_rating     Int
+  overall_rating         Int
+  strengths_text         String         @db.Text
+  improvement_text       String         @db.Text
+  recommendation         Recommendation
+  submitted_at           DateTime       @default(now())
+
+  round       InterviewRound   @relation(fields: [round_id], references: [id])
+  interviewer User             @relation(fields: [interviewer_id], references: [id])
+  rejection   RejectionReason?
+}
+
+model RejectionReason {
+  id           String            @id @default(uuid())
+  candidate_id String            @unique
+  feedback_id  String            @unique
+  category     RejectionCategory
+  notes        String            @db.Text
+  created_at   DateTime          @default(now())
+
+  candidate Candidate @relation(fields: [candidate_id], references: [id])
+  feedback  Feedback  @relation(fields: [feedback_id], references: [id])
+}
+
+model SyncLog {
+  id            String     @id @default(uuid())
+  candidate_id  String
+  status        SyncStatus @default(PENDING)
+  error_message String?
+  synced_at     DateTime   @default(now())
+
+  candidate Candidate @relation(fields: [candidate_id], references: [id])
+}

@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "TalentLens",
+  title: "RecriFlow",
   description: "Structured recruitment pipeline tracking",
 };
 

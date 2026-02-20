@@ -7,7 +7,10 @@ const checkRows = [
   { key: "DATABASE_URL", configured: Boolean(process.env.DATABASE_URL), note: "Supabase PostgreSQL connection string" },
   { key: "AUTH_SECRET", configured: Boolean(process.env.AUTH_SECRET), note: "Session signing secret" },
   { key: "PARSER_SERVICE_URL", configured: Boolean(process.env.PARSER_SERVICE_URL), note: "External parser endpoint" },
-  { key: "R2_PUBLIC_URL", configured: Boolean(process.env.R2_PUBLIC_URL), note: "Resume object storage URL" },
+  { key: "AWS_S3_REGION", configured: Boolean(process.env.AWS_S3_REGION), note: "AWS region for object storage" },
+  { key: "AWS_S3_BUCKET_NAME", configured: Boolean(process.env.AWS_S3_BUCKET_NAME), note: "S3 bucket for resume files" },
+  { key: "AWS_S3_ACCESS_KEY_ID", configured: Boolean(process.env.AWS_S3_ACCESS_KEY_ID), note: "S3 access key (server only)" },
+  { key: "AWS_S3_SECRET_ACCESS_KEY", configured: Boolean(process.env.AWS_S3_SECRET_ACCESS_KEY), note: "S3 secret key (server only)" },
   { key: "GOOGLE_SHEET_ID", configured: Boolean(process.env.GOOGLE_SHEET_ID), note: "Stakeholder sheet sync target" },
   { key: "RESEND_API_KEY", configured: Boolean(process.env.RESEND_API_KEY), note: "Email notification provider" },
 ];

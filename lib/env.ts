@@ -1,5 +1,35 @@
 function asString(value: string | undefined, fallback = ""): string {
-  return value?.trim() ? value : fallback;
+  return value?.trim() ? value.trim() : fallback;
+}
+
+function asBoolean(value: string | undefined, fallback = false): boolean {
+  if (!value) {
+    return fallback;
+  }
+
+  const normalized = value.trim().toLowerCase();
+  if (["1", "true", "yes", "on"].includes(normalized)) {
+    return true;
+  }
+
+  if (["0", "false", "no", "off"].includes(normalized)) {
+    return false;
+  }
+
+  return fallback;
+}
+
+function asPositiveInteger(value: string | undefined, fallback: number): number {
+  if (!value?.trim()) {
+    return fallback;
+  }
+
+  const parsed = Number.parseInt(value.trim(), 10);
+  if (Number.isNaN(parsed) || parsed <= 0) {
+    return fallback;
+  }
+
+  return parsed;
 }
 
 export const env = {
@@ -9,11 +39,13 @@ export const env = {
 
   DATABASE_URL: asString(process.env.DATABASE_URL),
 
-  R2_ENDPOINT: asString(process.env.R2_ENDPOINT),
-  R2_ACCESS_KEY_ID: asString(process.env.R2_ACCESS_KEY_ID),
-  R2_SECRET_ACCESS_KEY: asString(process.env.R2_SECRET_ACCESS_KEY),
-  R2_BUCKET_NAME: asString(process.env.R2_BUCKET_NAME),
-  R2_PUBLIC_URL: asString(process.env.R2_PUBLIC_URL),
+  AWS_S3_REGION: asString(process.env.AWS_S3_REGION),
+  AWS_S3_BUCKET_NAME: asString(process.env.AWS_S3_BUCKET_NAME),
+  AWS_S3_ACCESS_KEY_ID: asString(process.env.AWS_S3_ACCESS_KEY_ID),
+  AWS_S3_SECRET_ACCESS_KEY: asString(process.env.AWS_S3_SECRET_ACCESS_KEY),
+  AWS_S3_ENDPOINT: asString(process.env.AWS_S3_ENDPOINT),
+  AWS_S3_FORCE_PATH_STYLE: asBoolean(process.env.AWS_S3_FORCE_PATH_STYLE),
+  AWS_S3_SIGNED_URL_TTL_SECONDS: asPositiveInteger(process.env.AWS_S3_SIGNED_URL_TTL_SECONDS, 300),
 
   PARSER_SERVICE_URL: asString(process.env.PARSER_SERVICE_URL),
   PARSER_API_KEY: asString(process.env.PARSER_API_KEY),

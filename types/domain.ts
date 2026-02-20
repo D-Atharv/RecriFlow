@@ -240,3 +240,12 @@ export interface UpdateUserInput {
   role?: UserRole;
   is_active?: boolean;
 }
+
+export interface CreateUserInput {
+  full_name: string;
+  company_name?: string;
+  email: string;
+  password: string;
+  role: UserRole;
+  is_active?: boolean;
+}

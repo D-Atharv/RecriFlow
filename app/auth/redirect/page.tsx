@@ -1,15 +1,14 @@
-import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 
 import { getDefaultAppRoute } from "@/lib/app-route";
 import { getSessionUser } from "@/server/auth/session";
 
-export default async function AuthLayout({ children }: { children: ReactNode }) {
+export default async function AuthRedirectPage() {
   const user = await getSessionUser();
 
-  if (user) {
-    redirect(getDefaultAppRoute(user.role));
+  if (!user) {
+    redirect("/login");
   }
 
-  return children;
+  redirect(getDefaultAppRoute(user.role));
 }

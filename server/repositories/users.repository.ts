@@ -108,6 +108,20 @@ class UsersRepository {
       throw error;
     }
   }
+
+  async delete(id: string): Promise<boolean> {
+    try {
+      await prisma.user.delete({
+        where: { id },
+      });
+      return true;
+    } catch (error) {
+      if ((error as { code?: string }).code === "P2025") {
+        return false;
+      }
+      throw error;
+    }
+  }
 }
 
 export const usersRepository = new UsersRepository();

@@ -1,7 +1,7 @@
 import "server-only";
 
 import { redirect } from "next/navigation";
-
+import { getDefaultAppRoute } from "@/lib/app-route";
 import { ForbiddenError, UnauthorizedError } from "@/server/errors";
 import { getSessionUser } from "@/server/auth/session";
 import type { SessionUser } from "@/types/auth";
@@ -21,7 +21,7 @@ export async function requireAppRole(roles: UserRole[]): Promise<SessionUser> {
   const user = await requireAppUser();
 
   if (!roles.includes(user.role)) {
-    redirect("/candidates");
+    redirect(getDefaultAppRoute(user.role));
   }
 
   return user;

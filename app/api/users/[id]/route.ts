@@ -22,3 +22,15 @@ export async function PATCH(request: Request, context: RouteContext): Promise<Re
   }
 }
 
+export async function DELETE(_: Request, context: RouteContext): Promise<Response> {
+  try {
+    const actor = await requireApiUser(["ADMIN"]);
+    const { id } = await context.params;
+
+    await usersService.deleteUser(id, actor);
+
+    return new Response(null, { status: 204 });
+  } catch (error) {
+    return handleRouteError(error);
+  }
+}

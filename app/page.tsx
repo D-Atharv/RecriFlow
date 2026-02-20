@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 
+import { getDefaultAppRoute } from "@/lib/app-route";
 import { getSessionUser } from "@/server/auth/session";
 import { Navbar } from "@/components/landing/navbar";
 import { HeroSection } from "@/components/landing/hero-section";
@@ -20,7 +21,7 @@ export default async function HomePage() {
   const user = await getSessionUser();
 
   if (user) {
-    redirect("/dashboard");
+    redirect(getDefaultAppRoute(user.role));
   }
 
   return (

@@ -23,6 +23,15 @@ export const RegisterSchema = z.object({
   password: z.string().min(10, "Password must be at least 10 characters."),
 });
 
+export const CreateUserSchema = z.object({
+  full_name: z.string().trim().min(2, "Full name must be at least 2 characters."),
+  company_name: z.string().trim().optional(),
+  email: EmailSchema,
+  password: z.string().min(10, "Password must be at least 10 characters."),
+  role: z.enum(USER_ROLES),
+  is_active: z.boolean().optional().default(true),
+});
+
 export const CreateCandidateSchema = z.object({
   full_name: z.string().trim().min(2).max(100),
   email: EmailSchema,
@@ -138,6 +147,7 @@ export const UpdateUserSchema = z
 
 export type LoginSchemaInput = z.infer<typeof LoginSchema>;
 export type RegisterSchemaInput = z.infer<typeof RegisterSchema>;
+export type CreateUserSchemaInput = z.infer<typeof CreateUserSchema>;
 export type CreateCandidateSchemaInput = z.infer<typeof CreateCandidateSchema>;
 export type CreateJobSchemaInput = z.infer<typeof CreateJobSchema>;
 export type UpdateJobSchemaInput = z.infer<typeof UpdateJobSchema>;

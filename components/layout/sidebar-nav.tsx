@@ -3,21 +3,34 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const NAV_ITEMS = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/candidates", label: "Candidates" },
-  { href: "/candidates/new", label: "Add Candidate" },
-  { href: "/jobs", label: "Jobs" },
-  { href: "/jobs/new", label: "Create Job" },
-  { href: "/settings", label: "Settings" },
-] as const;
+import type { UserRole } from "@/types/domain";
 
-export function SidebarNav() {
+interface NavItem {
+  href: string;
+  label: string;
+  roles: readonly UserRole[];
+}
+
+const NAV_ITEMS: NavItem[] = [
+  { href: "/dashboard", label: "Dashboard", roles: ["ADMIN", "RECRUITER", "HIRING_MANAGER"] },
+  { href: "/candidates", label: "Candidates", roles: ["ADMIN", "RECRUITER", "HIRING_MANAGER"] },
+  { href: "/candidates/new", label: "Add Candidate", roles: ["ADMIN", "RECRUITER"] },
+  { href: "/jobs", label: "Jobs", roles: ["ADMIN", "RECRUITER", "HIRING_MANAGER", "INTERVIEWER"] },
+  { href: "/jobs/new", label: "Create Job", roles: ["ADMIN", "RECRUITER"] },
+  { href: "/settings", label: "Settings", roles: ["ADMIN"] },
+];
+
+interface SidebarNavProps {
+  role: UserRole;
+}
+
+export function SidebarNav({ role }: SidebarNavProps) {
   const pathname = usePathname();
+  const visibleItems = NAV_ITEMS.filter((item) => item.roles.includes(role));
 
   return (
     <nav className="space-y-1">
-      {NAV_ITEMS.map((item) => {
+      {visibleItems.map((item) => {
         const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
 
         return (

@@ -1,10 +1,11 @@
 import "server-only";
 
-import { NotFoundError, ValidationError } from "@/server/errors";
+import { hashPassword } from "@/server/auth/password";
+import { ConflictError, NotFoundError, ValidationError } from "@/server/errors";
 import { usersRepository } from "@/server/repositories/users.repository";
-import { validateUpdateUserInput } from "@/server/validators/users.validator";
+import { validateCreateUserInput, validateUpdateUserInput } from "@/server/validators/users.validator";
 import type { SessionUser } from "@/types/auth";
-import type { UpdateUserInput, User, UserRole } from "@/types/domain";
+import type { CreateUserInput, UpdateUserInput, User, UserRole } from "@/types/domain";
 
 function toPublicUser(record: {
   id: string;
@@ -103,6 +104,76 @@ class UsersService {
     }
 
     return toPublicUser(updated);
+  }
+
+  async createUser(payload: unknown): Promise<User> {
+    const validation = validateCreateUserInput(payload);
+
+    if (Object.keys(validation.issues).length > 0) {
+      throw new ValidationError("User create validation failed", validation.issues);
+    }
+
+    const input: CreateUserInput = validation.data;
+    const existing = await usersRepository.findByEmail(input.email);
+
+    if (existing) {
+      throw new ConflictError("A user with this email already exists");
+    }
+
+    const now = new Date().toISOString();
+    const created = await usersRepository.create({
+      id: crypto.randomUUID(),
+      fullName: input.full_name,
+      companyName: input.company_name?.trim() ? input.company_name.trim() : null,
+      email: input.email,
+      passwordHash: hashPassword(input.password),
+      role: input.role,
+      isActive: input.is_active ?? true,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    return toPublicUser(created);
+  }
+
+  async deleteUser(id: string, actor: SessionUser): Promise<void> {
+    const existing = await usersRepository.findById(id);
+
+    if (!existing) {
+      throw new NotFoundError("User not found");
+    }
+
+    if (existing.id === actor.id) {
+      throw new ValidationError("User remove validation failed", {
+        user: "You cannot remove your own account.",
+      });
+    }
+
+    if (existing.role === "ADMIN" && existing.isActive) {
+      const activeAdminCount = await usersRepository.countActiveAdmins();
+
+      if (activeAdminCount <= 1) {
+        throw new ValidationError("User remove validation failed", {
+          user: "At least one active admin account is required.",
+        });
+      }
+    }
+
+    try {
+      const deleted = await usersRepository.delete(id);
+
+      if (!deleted) {
+        throw new NotFoundError("User not found");
+      }
+    } catch (error) {
+      if ((error as { code?: string }).code === "P2003") {
+        throw new ValidationError("User remove validation failed", {
+          user: "User has related records. Deactivate the account instead of removing it.",
+        });
+      }
+
+      throw error;
+    }
   }
 }
 

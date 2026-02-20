@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 
+import { getDefaultAppRoute } from "@/lib/app-route";
+import type { SessionUser } from "@/types/auth";
 import { RegisterSchema, type RegisterSchemaInput } from "@/types/schemas";
 
 type RegisterFormValues = RegisterSchemaInput;
@@ -39,12 +41,17 @@ export function RegisterForm() {
         body: JSON.stringify(values),
       });
 
+      const payload = (await response.json()) as { error?: string; user?: SessionUser };
+
       if (!response.ok) {
-        const payload = (await response.json()) as { error?: string };
         throw new Error(payload.error ?? "Registration failed");
       }
 
-      router.replace("/dashboard");
+      if (!payload.user) {
+        throw new Error("Invalid registration response");
+      }
+
+      router.replace(getDefaultAppRoute(payload.user.role));
       router.refresh();
     } catch (registerError) {
       setError(registerError instanceof Error ? registerError.message : "Registration failed");

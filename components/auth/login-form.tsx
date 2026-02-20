@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 
+import { getDefaultAppRoute } from "@/lib/app-route";
+import type { SessionUser } from "@/types/auth";
 import { LoginSchema, type LoginSchemaInput } from "@/types/schemas";
 
 const defaultValues: LoginSchemaInput = {
@@ -35,12 +37,17 @@ export function LoginForm() {
         body: JSON.stringify(values),
       });
 
+      const payload = (await response.json()) as { error?: string; user?: SessionUser };
+
       if (!response.ok) {
-        const payload = (await response.json()) as { error?: string };
         throw new Error(payload.error ?? "Login failed");
       }
 
-      router.replace("/dashboard");
+      if (!payload.user) {
+        throw new Error("Invalid login response");
+      }
+
+      router.replace(getDefaultAppRoute(payload.user.role));
       router.refresh();
     } catch (loginError) {
       setError(loginError instanceof Error ? loginError.message : "Login failed");

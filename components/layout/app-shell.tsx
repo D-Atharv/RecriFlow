@@ -18,7 +18,7 @@ export function AppShell({ user, children }: AppShellProps) {
             <p className="text-xs uppercase tracking-[0.18em] text-[color:var(--color-ink-muted)]">TalentLens</p>
             <p className="text-lg font-semibold">Operations Console</p>
           </div>
-          <SidebarNav />
+          <SidebarNav role={user.role} />
         </aside>
 
         <main className="bg-[color:var(--color-surface)]">

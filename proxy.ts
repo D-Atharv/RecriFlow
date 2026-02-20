@@ -18,7 +18,7 @@ export function proxy(request: NextRequest): NextResponse {
   }
 
   if (pathStartsWith(pathname, AUTH_PATHS) && hasSession) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    return NextResponse.redirect(new URL("/auth/redirect", request.url));
   }
 
   return NextResponse.next();

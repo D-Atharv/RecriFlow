@@ -22,7 +22,13 @@ export function handleRouteError(error: unknown): Response {
   }
 
   if (error instanceof ConflictError) {
-    return json({ error: error.message }, 409);
+    return json(
+      {
+        error: error.message,
+        ...error.metadata,
+      },
+      409,
+    );
   }
 
   if (error instanceof UnauthorizedError) {

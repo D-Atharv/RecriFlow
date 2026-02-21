@@ -9,9 +9,12 @@ export class ValidationError extends Error {
 }
 
 export class ConflictError extends Error {
-  constructor(message: string) {
+  readonly metadata: Record<string, string>;
+
+  constructor(message: string, metadata: Record<string, string> = {}) {
     super(message);
     this.name = "ConflictError";
+    this.metadata = metadata;
   }
 }
 

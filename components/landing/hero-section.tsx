@@ -7,7 +7,7 @@ export function HeroSection() {
                 <Image
                     alt="Painted landscape background"
                     className="w-full h-full object-cover opacity-90  animate-pulse-soft"
-                    src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=2070&auto=format&fit=crop"
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuDiN5TOYHhWwLiScRKzy-juKyOCYRczkUqLgIk_AYQSOrUL5XlD1dXBfSevaFwjv09vJtupANnyxs7bLNJlPvKGjLB-PRuOt-o1cN4YjSMIPiMf6r_rCyBF6j3Ac2_GOHFEGENT8eAPDLLElSIsLlhpbDvIOJJd5YJ0vUFQsXbGZYJLgORtb571CJ1gkKP7ZOBaBs1eQGa6OTGAJqG-i2qYSFwaey8ZIF5RuQhi1eFj--kGbQ2zZVBJe8nmjv4jfh8L0VABdUv4Eag"
                     fill
                     priority
                 />

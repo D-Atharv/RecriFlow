@@ -11,7 +11,7 @@ export function FeatureOnboard() {
                             <div className="relative z-10 w-full max-w-sm">
                                 <div className="bg-white  rounded-xl shadow-lg p-4 mb-4 transform -rotate-2 border border-gray-100  animate-float-delayed">
                                     <div className="flex items-center gap-3 mb-2">
-                                        <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs">JD</div>
+                                        <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-800 flex items-center justify-center font-bold text-xs">JD</div>
                                         <div className="h-2 w-24 bg-gray-200  rounded"></div>
                                     </div>
                                     <div className="space-y-2">

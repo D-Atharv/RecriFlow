@@ -53,7 +53,7 @@ export function DashboardPipeline() {
             <tr className="hover:bg-gray-50 transition-colors group">
               <td className="px-6 py-4">
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold">
+                  <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-800 font-bold">
                     ZL
                   </div>
                   <div>
@@ -70,7 +70,7 @@ export function DashboardPipeline() {
                 Senior Product Designer
               </td>
               <td className="px-6 py-4">
-                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200">
+                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-800 border border-slate-200">
                   Tech Interview
                 </span>
               </td>
@@ -119,7 +119,7 @@ export function DashboardPipeline() {
                 Frontend Engineer
               </td>
               <td className="px-6 py-4">
-                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
+                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-800 border border-slate-200">
                   Screening
                 </span>
               </td>
@@ -147,7 +147,7 @@ export function DashboardPipeline() {
             <tr className="hover:bg-gray-50 transition-colors group">
               <td className="px-6 py-4">
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-pink-100 flex items-center justify-center text-pink-700 font-bold">
+                  <div className="h-10 w-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-900 font-bold">
                     MJ
                   </div>
                   <div>

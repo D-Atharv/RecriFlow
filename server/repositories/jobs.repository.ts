@@ -45,6 +45,8 @@ class JobsRepository {
         title: data.title,
         department: data.department,
         description: data.description,
+        core_responsibilities: data.coreResponsibilities,
+        interview_plan: data.interviewPlan as unknown as Prisma.InputJsonValue,
         required_skills: data.requiredSkills,
         experience_min: data.experienceMin,
         experience_max: data.experienceMax,
@@ -69,6 +71,12 @@ class JobsRepository {
     }
     if (patch.description !== undefined) {
       data.description = patch.description;
+    }
+    if (patch.coreResponsibilities !== undefined) {
+      data.core_responsibilities = patch.coreResponsibilities;
+    }
+    if (patch.interviewPlan !== undefined) {
+      data.interview_plan = patch.interviewPlan as unknown as Prisma.InputJsonValue;
     }
     if (patch.requiredSkills !== undefined) {
       data.required_skills = patch.requiredSkills;

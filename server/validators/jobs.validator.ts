@@ -8,9 +8,11 @@ export function validateCreateJobInput(payload: unknown): ValidationResult<Creat
   if (!parsed.success) {
     return {
       data: {
+        interview_plan: [],
         title: "",
         department: "",
         description: "",
+        core_responsibilities: [],
         required_skills: [],
         experience_min: 0,
         experience_max: 0,

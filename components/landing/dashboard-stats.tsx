@@ -22,8 +22,8 @@ export function DashboardStats() {
               </span>
             </div>
           </div>
-          <div className="p-3 bg-blue-50 rounded-lg">
-            <span className="material-icons-outlined text-blue-600">
+          <div className="p-3 bg-slate-50 rounded-lg">
+            <span className="material-icons-outlined text-slate-900">
               groups
             </span>
           </div>
@@ -72,8 +72,8 @@ export function DashboardStats() {
               </span>
             </div>
           </div>
-          <div className="p-3 bg-purple-50 rounded-lg">
-            <span className="material-icons-outlined text-purple-600">
+          <div className="p-3 bg-slate-100 rounded-lg">
+            <span className="material-icons-outlined text-slate-800">
               speed
             </span>
           </div>

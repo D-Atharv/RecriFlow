@@ -108,7 +108,7 @@ export async function sendInterviewerAssignmentEmail(payload: InterviewerAssignm
     ].join("\n"),
     html: `
       <div style="font-family:Arial,sans-serif;line-height:1.5;">
-        <h2>TalentLens Interview Assignment</h2>
+        <h2>RecriFlow Interview Assignment</h2>
         <p>Hi ${safeInterviewerName},</p>
         <p>You have been assigned to interview <strong>${safeCandidateName}</strong>.</p>
         <ul>
@@ -144,7 +144,7 @@ export async function sendFeedbackSubmittedEmail(payload: FeedbackSubmittedPaylo
     ].join("\n"),
     html: `
       <div style="font-family:Arial,sans-serif;line-height:1.5;">
-        <h2>TalentLens Feedback Update</h2>
+        <h2>RecriFlow Feedback Update</h2>
         <p>Hi ${safeRecruiterName},</p>
         <p>Feedback has been submitted for <strong>${safeCandidateName}</strong>.</p>
         <ul>
@@ -175,7 +175,7 @@ export async function sendCandidateRejectedEmail(payload: CandidateRejectedPaylo
     ].join("\n"),
     html: `
       <div style="font-family:Arial,sans-serif;line-height:1.5;">
-        <h2>TalentLens Rejection Update</h2>
+        <h2>RecriFlow Rejection Update</h2>
         <p>Hi ${safeRecruiterName},</p>
         <p><strong>${safeCandidateName}</strong> has been marked as rejected.</p>
         <ul>
@@ -186,4 +186,3 @@ export async function sendCandidateRejectedEmail(payload: CandidateRejectedPaylo
     `,
   });
 }
-

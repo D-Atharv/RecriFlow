@@ -1,3 +1,5 @@
+import { revalidatePath } from "next/cache";
+
 import { handleRouteError, json } from "@/lib/http";
 import { isValidPipelineStage } from "@/lib/pipeline";
 import { requireApiUser } from "@/server/auth/guards";
@@ -34,6 +36,12 @@ export async function POST(request: Request): Promise<Response> {
     const user = await requireApiUser(["ADMIN", "RECRUITER"]);
     const payload = await request.json();
     const candidate = await candidatesService.createCandidate(payload, user);
+
+    revalidatePath("/dashboard");
+    revalidatePath("/candidates");
+    revalidatePath(`/candidates/${candidate.id}`);
+    revalidatePath("/jobs");
+    revalidatePath(`/jobs/${candidate.jobId}`);
 
     return json({ candidate }, 201);
   } catch (error) {

@@ -14,8 +14,8 @@ export function DashboardActivity() {
       </div>
       <div className="space-y-4">
         <div className="flex gap-4">
-          <div className="mt-1 bg-blue-50 p-2 rounded-full h-8 w-8 flex items-center justify-center">
-            <span className="material-icons-outlined text-blue-600 text-[16px]">
+          <div className="mt-1 bg-slate-50 p-2 rounded-full h-8 w-8 flex items-center justify-center">
+            <span className="material-icons-outlined text-slate-900 text-[16px]">
               mail
             </span>
           </div>
@@ -42,8 +42,8 @@ export function DashboardActivity() {
           </div>
         </div>
         <div className="flex gap-4">
-          <div className="mt-1 bg-purple-50 p-2 rounded-full h-8 w-8 flex items-center justify-center">
-            <span className="material-icons-outlined text-purple-600 text-[16px]">
+          <div className="mt-1 bg-slate-100 p-2 rounded-full h-8 w-8 flex items-center justify-center">
+            <span className="material-icons-outlined text-slate-800 text-[16px]">
               rate_review
             </span>
           </div>

@@ -21,7 +21,7 @@ export function FeatureManagement() {
         <div className="bg-surface-light rounded-2xl shadow-xl overflow-hidden border border-border-light flex h-[800px] max-h-[85vh] text-left">
           <DashboardSidebar />
           <main className="flex-1 overflow-y-auto bg-background-light relative scrollbar-hide">
-            <div className="absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-blue-50/50 to-transparent pointer-events-none z-0"></div>
+            <div className="absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-slate-50/50 to-transparent pointer-events-none z-0"></div>
             <DashboardHeader />
             <div className="p-8 relative z-0 space-y-8">
               <DashboardStats />

@@ -20,8 +20,13 @@ export function validateCreateCandidateInput(payload: unknown): ValidationResult
     };
   }
 
+  const data: CreateCandidateInput = {
+    ...parsed.data,
+    total_experience_yrs: parsed.data.total_experience_yrs ?? undefined,
+  };
+
   return {
-    data: parsed.data,
+    data,
     issues: {},
   };
 }

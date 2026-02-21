@@ -10,7 +10,20 @@ import type {
 } from "@prisma/client";
 
 import type { AuthUserRecord } from "@/types/auth";
-import type { Candidate, Feedback, InterviewRound, Job, RejectionReason, SyncLog, User } from "@/types/domain";
+import type {
+  Candidate,
+  Feedback,
+  InterviewPlanStep,
+  InterviewPlanStepKind,
+  InterviewRound,
+  Job,
+  RejectionReason,
+  RoundType,
+  SyncLog,
+  User,
+  JobOutcomeStage,
+} from "@/types/domain";
+import { getDefaultInterviewPlan, isOutcomeStage, isRoundType } from "@/lib/interview-plan";
 
 export const candidateWithRelationsArgs = {
   include: {
@@ -42,6 +55,48 @@ function toIso(value: Date): string {
   return value.toISOString();
 }
 
+function isInterviewPlanStepKind(value: unknown): value is InterviewPlanStepKind {
+  return value === "ROUND" || value === "OUTCOME";
+}
+
+function toDomainInterviewPlan(value: Prisma.JsonValue): InterviewPlanStep[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((item, index) => {
+      if (!item || typeof item !== "object" || Array.isArray(item)) {
+        return null;
+      }
+
+      const record = item as Record<string, unknown>;
+      const key = typeof record.key === "string" && record.key.trim().length > 0 ? record.key.trim() : `step-${index + 1}`;
+      const label = typeof record.label === "string" && record.label.trim().length > 0 ? record.label.trim() : `Step ${index + 1}`;
+      const kind = isInterviewPlanStepKind(record.kind) ? record.kind : "ROUND";
+      const roundType: RoundType | null =
+        typeof record.roundType === "string" && isRoundType(record.roundType) ? record.roundType : null;
+      const outcomeStage: JobOutcomeStage | null =
+        typeof record.outcomeStage === "string" && isOutcomeStage(record.outcomeStage) ? record.outcomeStage : null;
+
+      if (kind === "ROUND" && !roundType) {
+        return null;
+      }
+      if (kind === "OUTCOME" && !outcomeStage) {
+        return null;
+      }
+
+      return {
+        key,
+        label,
+        kind,
+        roundType: kind === "ROUND" ? roundType : null,
+        outcomeStage: kind === "OUTCOME" ? outcomeStage : null,
+      } satisfies InterviewPlanStep;
+    })
+    .filter((step): step is InterviewPlanStep => step !== null);
+}
+
 export function toAuthUserRecord(record: PrismaUser): AuthUserRecord {
   return {
     id: record.id,
@@ -69,11 +124,15 @@ export function toDomainUser(record: PrismaUser): User {
 }
 
 export function toDomainJob(record: PrismaJob): Job {
+  const parsedInterviewPlan = toDomainInterviewPlan(record.interview_plan);
+
   return {
     id: record.id,
     title: record.title,
     department: record.department,
     description: record.description,
+    coreResponsibilities: record.core_responsibilities,
+    interviewPlan: parsedInterviewPlan.length > 0 ? parsedInterviewPlan : getDefaultInterviewPlan(),
     requiredSkills: record.required_skills,
     experienceMin: record.experience_min,
     experienceMax: record.experience_max,
@@ -213,4 +272,3 @@ export function toDomainRoundFromPrisma(
     feedback,
   };
 }
-

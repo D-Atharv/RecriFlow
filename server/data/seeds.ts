@@ -1,4 +1,5 @@
 import { hashPassword } from "@/server/auth/password";
+import { getDefaultInterviewPlan } from "@/lib/interview-plan";
 import type { AuthUserRecord } from "@/types/auth";
 import type { Candidate, Job, SyncLog } from "@/types/domain";
 
@@ -65,6 +66,12 @@ export const seedJobs: Job[] = [
     title: "Senior Frontend Engineer",
     department: "Engineering",
     description: "Own core frontend architecture and mentor engineers.",
+    coreResponsibilities: [
+      "Own the frontend architecture for core product surfaces.",
+      "Mentor engineers on React patterns, testing, and performance.",
+      "Collaborate with product and design on deliverable planning.",
+    ],
+    interviewPlan: getDefaultInterviewPlan(),
     requiredSkills: ["React", "Next.js", "TypeScript", "Testing"],
     experienceMin: 4,
     experienceMax: 8,
@@ -78,6 +85,12 @@ export const seedJobs: Job[] = [
     title: "Backend Engineer",
     department: "Engineering",
     description: "Design resilient APIs and improve platform performance.",
+    coreResponsibilities: [
+      "Design and maintain resilient APIs for product domains.",
+      "Improve query performance and service reliability.",
+      "Drive observability and incident response best practices.",
+    ],
+    interviewPlan: getDefaultInterviewPlan(),
     requiredSkills: ["Node.js", "PostgreSQL", "System Design"],
     experienceMin: 3,
     experienceMax: 7,
@@ -91,6 +104,12 @@ export const seedJobs: Job[] = [
     title: "DevOps Engineer",
     department: "Platform",
     description: "Scale CI/CD and cloud operations for product teams.",
+    coreResponsibilities: [
+      "Scale CI/CD workflows for multi-team deployments.",
+      "Automate cloud infrastructure provisioning and drift checks.",
+      "Improve platform reliability, alerts, and runbooks.",
+    ],
+    interviewPlan: getDefaultInterviewPlan(),
     requiredSkills: ["Docker", "Kubernetes", "Terraform"],
     experienceMin: 3,
     experienceMax: 6,

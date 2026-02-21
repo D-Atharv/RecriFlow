@@ -5,14 +5,19 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 
-import { RECOMMENDATIONS, REJECTION_CATEGORIES } from "@/types/domain";
+import { RECOMMENDATIONS } from "@/types/domain";
 import { SubmitFeedbackSchema, type SubmitFeedbackSchemaInput } from "@/types/schemas";
+
+import { formatEnumLabel } from "@/components/candidates/detail/candidate-detail.utils";
+import { RatingPillInput } from "@/components/feedback/form/rating-pill-input";
+import { RejectionDetailsCard } from "@/components/feedback/form/rejection-details-card";
 
 interface FeedbackFormProps {
   candidateId: string;
   roundId: string;
   roundType: string;
   candidateName: string;
+  onSuccess?: () => void;
 }
 
 const defaultValues: SubmitFeedbackSchemaInput = {
@@ -26,7 +31,15 @@ const defaultValues: SubmitFeedbackSchemaInput = {
   recommendation: "YES",
 };
 
-export function FeedbackForm({ candidateId, roundId, roundType, candidateName }: FeedbackFormProps) {
+const ratingFields: Array<{ key: keyof Pick<SubmitFeedbackSchemaInput, "technical_rating" | "communication_rating" | "problem_solving_rating" | "culture_fit_rating" | "overall_rating">; label: string }> = [
+  { key: "technical_rating", label: "Technical" },
+  { key: "communication_rating", label: "Communication" },
+  { key: "problem_solving_rating", label: "Problem Solving" },
+  { key: "culture_fit_rating", label: "Culture Fit" },
+  { key: "overall_rating", label: "Overall" },
+];
+
+export function FeedbackForm({ candidateId, roundId, roundType, candidateName, onSuccess }: FeedbackFormProps) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,11 +51,11 @@ export function FeedbackForm({ candidateId, roundId, roundType, candidateName }:
   });
 
   const recommendation = form.watch("recommendation");
+  const rejectionCategory = form.watch("rejection.category");
+  const rejectionNotes = form.watch("rejection.notes") ?? "";
 
-  const isRejection = useMemo(
-    () => ["NO", "STRONG_NO"].includes(recommendation),
-    [recommendation],
-  );
+  const isRejection = useMemo(() => ["NO", "STRONG_NO"].includes(recommendation), [recommendation]);
+  const rejectionReady = !isRejection || (Boolean(rejectionCategory) && rejectionNotes.trim().length >= 20);
 
   const onSubmit = form.handleSubmit(async (values) => {
     setSubmitting(true);
@@ -63,8 +76,12 @@ export function FeedbackForm({ candidateId, roundId, roundType, candidateName }:
         throw new Error(responsePayload.error ?? "Failed to submit feedback");
       }
 
-      router.push(`/candidates/${candidateId}`);
-      router.refresh();
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        router.push(`/candidates/${candidateId}`);
+        router.refresh();
+      }
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Failed to submit feedback");
     } finally {
@@ -73,105 +90,101 @@ export function FeedbackForm({ candidateId, roundId, roundType, candidateName }:
   });
 
   return (
-    <form onSubmit={onSubmit} className="space-y-5 rounded-xl border border-[color:var(--color-border)] bg-white p-6">
-      <div>
-        <h2 className="text-xl font-semibold">Feedback for {candidateName}</h2>
-        <p className="mt-1 text-sm text-[color:var(--color-ink-soft)]">Round: {roundType}</p>
-      </div>
+    <form onSubmit={onSubmit} className="space-y-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      <header className="space-y-1">
+        <h2 className="text-[18px] font-semibold tracking-tight text-slate-900 line-clamp-1">Interview Feedback</h2>
+        <p className="text-[12px] text-slate-500 font-medium">
+          Provide your feedback for the {formatEnumLabel(roundType)} round for {candidateName}.
+        </p>
+      </header>
 
-      <div className="grid gap-3 md:grid-cols-5">
-        <label className="space-y-1 text-sm">
-          <span>Technical</span>
-          <input type="number" min={1} max={5} {...form.register("technical_rating", { valueAsNumber: true })} className="w-full rounded-lg border border-[color:var(--color-border)] px-2 py-2" />
-          {form.formState.errors.technical_rating ? <p className="text-xs text-rose-700">{form.formState.errors.technical_rating.message}</p> : null}
+      <section className="space-y-2.5 rounded-xl border border-slate-100 bg-slate-50/70 p-3">
+        <h3 className="text-[13px] font-semibold text-slate-900">Skill Assessment</h3>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+          {ratingFields.map((field) => (
+            <RatingPillInput
+              key={field.key}
+              label={field.label}
+              value={form.watch(field.key)}
+              onChange={(value) => form.setValue(field.key, value, { shouldDirty: true, shouldValidate: true })}
+              error={form.formState.errors[field.key]?.message}
+            />
+          ))}
+        </div>
+      </section>
+
+      <section className="grid gap-3 md:grid-cols-2">
+        <label className="block space-y-1.5">
+          <span className="text-[12px] font-medium text-slate-700">Strengths</span>
+          <textarea
+            rows={5}
+            {...form.register("strengths_text")}
+            placeholder="What did the candidate do well?"
+            className="w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-[13px] text-slate-900 outline-none focus:border-slate-300"
+          />
+          {form.formState.errors.strengths_text ? (
+            <p className="text-[11px] font-medium text-rose-600">{form.formState.errors.strengths_text.message}</p>
+          ) : null}
         </label>
 
-        <label className="space-y-1 text-sm">
-          <span>Communication</span>
-          <input type="number" min={1} max={5} {...form.register("communication_rating", { valueAsNumber: true })} className="w-full rounded-lg border border-[color:var(--color-border)] px-2 py-2" />
-          {form.formState.errors.communication_rating ? <p className="text-xs text-rose-700">{form.formState.errors.communication_rating.message}</p> : null}
+        <label className="block space-y-1.5">
+          <span className="text-[12px] font-medium text-slate-700">Areas for Improvement</span>
+          <textarea
+            rows={5}
+            {...form.register("improvement_text")}
+            placeholder="Where did they struggle or lack depth?"
+            className="w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-[13px] text-slate-900 outline-none focus:border-slate-300"
+          />
+          {form.formState.errors.improvement_text ? (
+            <p className="text-[11px] font-medium text-rose-600">{form.formState.errors.improvement_text.message}</p>
+          ) : null}
         </label>
+      </section>
 
-        <label className="space-y-1 text-sm">
-          <span>Problem Solving</span>
-          <input type="number" min={1} max={5} {...form.register("problem_solving_rating", { valueAsNumber: true })} className="w-full rounded-lg border border-[color:var(--color-border)] px-2 py-2" />
-          {form.formState.errors.problem_solving_rating ? <p className="text-xs text-rose-700">{form.formState.errors.problem_solving_rating.message}</p> : null}
+      <section className="space-y-1.5">
+        <label htmlFor="recommendation" className="text-[12px] font-medium text-slate-700">
+          Final Decision
         </label>
-
-        <label className="space-y-1 text-sm">
-          <span>Culture Fit</span>
-          <input type="number" min={1} max={5} {...form.register("culture_fit_rating", { valueAsNumber: true })} className="w-full rounded-lg border border-[color:var(--color-border)] px-2 py-2" />
-          {form.formState.errors.culture_fit_rating ? <p className="text-xs text-rose-700">{form.formState.errors.culture_fit_rating.message}</p> : null}
-        </label>
-
-        <label className="space-y-1 text-sm">
-          <span>Overall</span>
-          <input type="number" min={1} max={5} {...form.register("overall_rating", { valueAsNumber: true })} className="w-full rounded-lg border border-[color:var(--color-border)] px-2 py-2" />
-          {form.formState.errors.overall_rating ? <p className="text-xs text-rose-700">{form.formState.errors.overall_rating.message}</p> : null}
-        </label>
-      </div>
-
-      <label className="block space-y-1 text-sm">
-        <span>Strengths</span>
-        <textarea rows={4} {...form.register("strengths_text")} className="w-full rounded-lg border border-[color:var(--color-border)] px-3 py-2" />
-        {form.formState.errors.strengths_text ? <p className="text-xs text-rose-700">{form.formState.errors.strengths_text.message}</p> : null}
-      </label>
-
-      <label className="block space-y-1 text-sm">
-        <span>Improvements</span>
-        <textarea rows={4} {...form.register("improvement_text")} className="w-full rounded-lg border border-[color:var(--color-border)] px-3 py-2" />
-        {form.formState.errors.improvement_text ? <p className="text-xs text-rose-700">{form.formState.errors.improvement_text.message}</p> : null}
-      </label>
-
-      <label className="block space-y-1 text-sm">
-        <span>Recommendation</span>
-        <select {...form.register("recommendation")} className="w-full rounded-lg border border-[color:var(--color-border)] px-3 py-2">
+        <select
+          id="recommendation"
+          {...form.register("recommendation")}
+          className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-[13px] text-slate-900 outline-none focus:border-slate-300"
+        >
+          <option value="" disabled>Select recommendation...</option>
           {RECOMMENDATIONS.map((item) => (
             <option key={item} value={item}>
-              {item}
+              {formatEnumLabel(item)}
             </option>
           ))}
         </select>
-        {form.formState.errors.recommendation ? <p className="text-xs text-rose-700">{form.formState.errors.recommendation.message}</p> : null}
-      </label>
+        {form.formState.errors.recommendation ? (
+          <p className="text-[11px] font-medium text-rose-600">{form.formState.errors.recommendation.message}</p>
+        ) : null}
+      </section>
 
-      {isRejection ? (
-        <div className="space-y-3 rounded-xl border border-rose-200 bg-rose-50 p-4">
-          <p className="text-sm font-semibold text-rose-700">Rejection details required</p>
-
-          <label className="block space-y-1 text-sm">
-            <span>Rejection Category</span>
-            <select {...form.register("rejection.category")} className="w-full rounded-lg border border-rose-200 bg-white px-3 py-2">
-              {REJECTION_CATEGORIES.map((item) => (
-                <option key={item} value={item}>
-                  {item}
-                </option>
-              ))}
-            </select>
-            {form.formState.errors.rejection?.category ? (
-              <p className="text-xs text-rose-700">{form.formState.errors.rejection.category.message}</p>
-            ) : null}
-          </label>
-
-          <label className="block space-y-1 text-sm">
-            <span>Rejection Notes</span>
-            <textarea rows={4} {...form.register("rejection.notes")} className="w-full rounded-lg border border-rose-200 bg-white px-3 py-2" />
-            {form.formState.errors.rejection?.notes ? (
-              <p className="text-xs text-rose-700">{form.formState.errors.rejection.notes.message}</p>
-            ) : null}
-          </label>
-        </div>
-      ) : null}
+      {isRejection ? <RejectionDetailsCard form={form} /> : null}
 
       {form.formState.errors.rejection && !isRejection ? (
-        <p className="text-xs text-rose-700">{form.formState.errors.rejection.message as string}</p>
+        <p className="text-[11px] font-medium text-rose-600">{form.formState.errors.rejection.message as string}</p>
       ) : null}
 
-      {error ? <p className="text-sm text-rose-700">{error}</p> : null}
+      {error ? <p className="text-sm font-medium text-rose-700">{error}</p> : null}
 
-      <button type="submit" disabled={submitting} className="rounded-lg bg-[color:var(--color-primary)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-70">
-        {submitting ? "Submitting..." : "Submit Feedback"}
-      </button>
+      <footer className="flex items-center justify-end gap-2 border-t border-slate-100 pt-2.5">
+        <button
+          type="button"
+          className="rounded-lg px-3 py-2 text-[12px] font-medium text-slate-500 transition-colors hover:text-slate-700"
+        >
+          Save as Draft
+        </button>
+        <button
+          type="submit"
+          disabled={submitting || !rejectionReady}
+          className="rounded-lg bg-slate-900 px-4 py-2 text-[12px] font-semibold text-white transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {submitting ? "Submitting..." : "Submit Feedback"}
+        </button>
+      </footer>
     </form>
   );
 }

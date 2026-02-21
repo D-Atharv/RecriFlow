@@ -1,14 +1,18 @@
-import { JobFormClient } from "@/components/jobs/job-form-client";
-import { PageHeading } from "@/components/ui/page-heading";
+import { CreateJobOpeningForm } from "@/components/jobs/new/create-job-opening-form";
 import { requireAppRole } from "@/server/auth/guards";
+import { usersService } from "@/server/services/users.service";
 
 export default async function NewJobPage() {
-  await requireAppRole(["ADMIN", "RECRUITER"]);
+  const user = await requireAppRole(["ADMIN", "RECRUITER"]);
+  const users = await usersService.listUsers();
+  const hiringTeamCandidates = users.filter(
+    (member) => member.isActive && ["ADMIN", "RECRUITER", "HIRING_MANAGER"].includes(member.role),
+  );
 
   return (
-    <div>
-      <PageHeading title="Create Job" description="Add a new position and required skill profile." />
-      <JobFormClient mode="create" />
-    </div>
+    <CreateJobOpeningForm
+      actorUserId={user.id}
+      hiringTeamCandidates={hiringTeamCandidates}
+    />
   );
 }

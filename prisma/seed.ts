@@ -12,6 +12,16 @@ const ITERATIONS = 120_000;
 const KEY_LENGTH = 64;
 const DIGEST = "sha512";
 
+const defaultInterviewPlan = [
+  { key: "screening", label: "Screening", kind: "ROUND", roundType: "SCREENING", outcomeStage: null },
+  { key: "machine-coding", label: "Machine Coding", kind: "ROUND", roundType: "TECHNICAL_L1", outcomeStage: null },
+  { key: "dsa", label: "DSA", kind: "ROUND", roundType: "TECHNICAL_L2", outcomeStage: null },
+  { key: "system-design", label: "System Design", kind: "ROUND", roundType: "SYSTEM_DESIGN", outcomeStage: null },
+  { key: "hr", label: "HR", kind: "ROUND", roundType: "HR", outcomeStage: null },
+  { key: "offer", label: "Offer", kind: "OUTCOME", roundType: null, outcomeStage: "OFFER" },
+  { key: "hired", label: "Hired", kind: "OUTCOME", roundType: null, outcomeStage: "HIRED" },
+];
+
 function hashPassword(password: string): string {
   const salt = randomBytes(16).toString("hex");
   const hash = pbkdf2Sync(password, salt, ITERATIONS, KEY_LENGTH, DIGEST).toString("hex");
@@ -117,6 +127,12 @@ async function main(): Promise<void> {
       title: "Senior Frontend Engineer",
       department: "Engineering",
       description: "Own core frontend architecture and mentor engineers.",
+      core_responsibilities: [
+        "Own the frontend architecture for core product surfaces.",
+        "Mentor engineers on React patterns, testing, and performance.",
+        "Collaborate with product and design on deliverable planning.",
+      ],
+      interview_plan: defaultInterviewPlan,
       required_skills: ["React", "Next.js", "TypeScript", "Testing"],
       experience_min: 4,
       experience_max: 8,
@@ -129,6 +145,12 @@ async function main(): Promise<void> {
       title: "Senior Frontend Engineer",
       department: "Engineering",
       description: "Own core frontend architecture and mentor engineers.",
+      core_responsibilities: [
+        "Own the frontend architecture for core product surfaces.",
+        "Mentor engineers on React patterns, testing, and performance.",
+        "Collaborate with product and design on deliverable planning.",
+      ],
+      interview_plan: defaultInterviewPlan,
       required_skills: ["React", "Next.js", "TypeScript", "Testing"],
       experience_min: 4,
       experience_max: 8,
@@ -143,6 +165,12 @@ async function main(): Promise<void> {
       title: "Backend Engineer",
       department: "Engineering",
       description: "Design resilient APIs and improve platform performance.",
+      core_responsibilities: [
+        "Design and maintain resilient APIs for product domains.",
+        "Improve query performance and service reliability.",
+        "Drive observability and incident response best practices.",
+      ],
+      interview_plan: defaultInterviewPlan,
       required_skills: ["Node.js", "PostgreSQL", "System Design"],
       experience_min: 3,
       experience_max: 7,
@@ -155,6 +183,12 @@ async function main(): Promise<void> {
       title: "Backend Engineer",
       department: "Engineering",
       description: "Design resilient APIs and improve platform performance.",
+      core_responsibilities: [
+        "Design and maintain resilient APIs for product domains.",
+        "Improve query performance and service reliability.",
+        "Drive observability and incident response best practices.",
+      ],
+      interview_plan: defaultInterviewPlan,
       required_skills: ["Node.js", "PostgreSQL", "System Design"],
       experience_min: 3,
       experience_max: 7,
@@ -169,6 +203,12 @@ async function main(): Promise<void> {
       title: "DevOps Engineer",
       department: "Platform",
       description: "Scale CI/CD and cloud operations for product teams.",
+      core_responsibilities: [
+        "Scale CI/CD workflows for multi-team deployments.",
+        "Automate cloud infrastructure provisioning and drift checks.",
+        "Improve platform reliability, alerts, and runbooks.",
+      ],
+      interview_plan: defaultInterviewPlan,
       required_skills: ["Docker", "Kubernetes", "Terraform"],
       experience_min: 3,
       experience_max: 6,
@@ -181,6 +221,12 @@ async function main(): Promise<void> {
       title: "DevOps Engineer",
       department: "Platform",
       description: "Scale CI/CD and cloud operations for product teams.",
+      core_responsibilities: [
+        "Scale CI/CD workflows for multi-team deployments.",
+        "Automate cloud infrastructure provisioning and drift checks.",
+        "Improve platform reliability, alerts, and runbooks.",
+      ],
+      interview_plan: defaultInterviewPlan,
       required_skills: ["Docker", "Kubernetes", "Terraform"],
       experience_min: 3,
       experience_max: 6,

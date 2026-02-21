@@ -22,7 +22,7 @@ export async function GET(_: Request, context: RouteContext): Promise<Response> 
 
 export async function POST(request: Request, context: RouteContext): Promise<Response> {
   try {
-    const actor = await requireApiUser(["ADMIN", "RECRUITER"]);
+    const actor = await requireApiUser(["ADMIN", "RECRUITER", "INTERVIEWER", "HIRING_MANAGER"]);
     const { id } = await context.params;
     const payload = await request.json();
 

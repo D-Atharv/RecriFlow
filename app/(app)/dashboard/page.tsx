@@ -6,8 +6,8 @@ import { jobsService } from "@/server/services/jobs.service";
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
-  await requireAppRole(["ADMIN", "RECRUITER", "HIRING_MANAGER"]);
+  const user = await requireAppRole(["ADMIN", "RECRUITER", "HIRING_MANAGER"]);
   const [candidates, jobs] = await Promise.all([candidatesService.listCandidates(), jobsService.listJobs()]);
 
-  return <KanbanBoardClient candidates={candidates} jobs={jobs} />;
+  return <KanbanBoardClient candidates={candidates} jobs={jobs} canCreateCandidate={["ADMIN", "RECRUITER"].includes(user.role)} />;
 }

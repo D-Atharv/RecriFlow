@@ -23,7 +23,7 @@ export function FeatureData() {
                                     <div className="grid grid-cols-4 p-2 items-center hover:bg-gray-50 :bg-gray-700 transition">
                                         <div className="col-span-1 truncate">Jane Doe</div>
                                         <div className="col-span-1 text-gray-500">UX Des</div>
-                                        <div className="col-span-1"><span className="bg-blue-100 text-blue-700   px-1.5 py-0.5 rounded text-[10px]">Active</span></div>
+                                        <div className="col-span-1"><span className="bg-slate-100 text-slate-800   px-1.5 py-0.5 rounded text-[10px]">Active</span></div>
                                         <div className="col-span-1 font-mono">92%</div>
                                     </div>
                                     <div className="grid grid-cols-4 p-2 items-center hover:bg-gray-50 :bg-gray-700 transition bg-green-50/50 ">

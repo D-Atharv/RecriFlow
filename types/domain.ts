@@ -39,6 +39,12 @@ export const ROUND_TYPES = [
 ] as const;
 export type RoundType = (typeof ROUND_TYPES)[number];
 
+export const INTERVIEW_PLAN_STEP_KINDS = ["ROUND", "OUTCOME"] as const;
+export type InterviewPlanStepKind = (typeof INTERVIEW_PLAN_STEP_KINDS)[number];
+
+export const JOB_OUTCOME_STAGES = ["OFFER", "HIRED"] as const;
+export type JobOutcomeStage = (typeof JOB_OUTCOME_STAGES)[number];
+
 export const ROUND_STATUSES = ["SCHEDULED", "COMPLETED", "CANCELLED", "NO_SHOW"] as const;
 export type RoundStatus = (typeof ROUND_STATUSES)[number];
 
@@ -72,11 +78,21 @@ export interface User {
   updatedAt: string;
 }
 
+export interface InterviewPlanStep {
+  key: string;
+  label: string;
+  kind: InterviewPlanStepKind;
+  roundType: RoundType | null;
+  outcomeStage: JobOutcomeStage | null;
+}
+
 export interface Job {
   id: string;
   title: string;
   department: string;
   description: string;
+  coreResponsibilities: string[];
+  interviewPlan: InterviewPlanStep[];
   requiredSkills: string[];
   experienceMin: number;
   experienceMax: number;
@@ -142,6 +158,7 @@ export interface Candidate {
   jobId: string;
   recruiterId: string;
   notes: string | null;
+  avatarUrl?: string | null;
   createdAt: string;
   updatedAt: string;
   rounds: InterviewRound[];
@@ -181,6 +198,7 @@ export interface CreateCandidateInput {
   source: CandidateSource;
   job_id: string;
   notes?: string;
+  current_stage?: PipelineStage;
 }
 
 export interface CandidateFilters {
@@ -193,6 +211,8 @@ export interface CreateJobInput {
   title: string;
   department: string;
   description: string;
+  core_responsibilities: string[];
+  interview_plan: InterviewPlanStep[];
   required_skills: string[];
   experience_min: number;
   experience_max: number;
@@ -203,6 +223,8 @@ export interface UpdateJobInput {
   title?: string;
   department?: string;
   description?: string;
+  core_responsibilities?: string[];
+  interview_plan?: InterviewPlanStep[];
   required_skills?: string[];
   experience_min?: number;
   experience_max?: number;

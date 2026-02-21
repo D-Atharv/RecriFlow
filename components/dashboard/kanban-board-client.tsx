@@ -1,135 +1,219 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import Link from "next/link";
+import { ChevronDown, Plus, Search, SlidersHorizontal } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 
-import { CandidateCard } from "@/components/dashboard/candidate-card";
-import { KANBAN_STAGES, STAGE_LABELS } from "@/lib/pipeline";
-import type { Candidate, Job } from "@/types/domain";
+import { KanbanColumn } from "@/components/dashboard/kanban/kanban-column";
+import { CandidatesOverviewMetrics } from "@/components/candidates/list/candidates-overview-metrics";
+import { KANBAN_STAGES } from "@/lib/pipeline";
+import type { Candidate, Job, PipelineStage } from "@/types/domain";
 
 interface KanbanBoardClientProps {
   candidates: Candidate[];
   jobs: Job[];
+  canCreateCandidate: boolean;
 }
 
-export function KanbanBoardClient({ candidates, jobs }: KanbanBoardClientProps) {
+function groupByStage(candidates: Candidate[]): Record<PipelineStage, Candidate[]> {
+  return KANBAN_STAGES.reduce<Record<PipelineStage, Candidate[]>>((acc, stage) => {
+    acc[stage] = candidates.filter((candidate) => candidate.currentStage === stage);
+    return acc;
+  }, {} as Record<PipelineStage, Candidate[]>);
+}
+
+export function KanbanBoardClient({ candidates, jobs, canCreateCandidate }: KanbanBoardClientProps) {
+  const [boardCandidates, setBoardCandidates] = useState(candidates);
+  const [draggingCandidateId, setDraggingCandidateId] = useState<string | null>(null);
+  const [dropStage, setDropStage] = useState<PipelineStage | null>(null);
   const [query, setQuery] = useState("");
+  const [jobFilter, setJobFilter] = useState<string>("ALL");
 
-  const jobMap = useMemo(() => {
-    return new Map(jobs.map((job) => [job.id, job]));
-  }, [jobs]);
-
+  const jobsById = useMemo(() => new Map(jobs.map((job) => [job.id, job])), [jobs]);
   const filteredCandidates = useMemo(() => {
-    const trimmed = query.trim().toLowerCase();
+    const needle = query.trim().toLowerCase();
 
-    if (!trimmed) {
-      return candidates;
-    }
+    return boardCandidates.filter((candidate) => {
+      if (jobFilter !== "ALL" && candidate.jobId !== jobFilter) {
+        return false;
+      }
 
-    return candidates.filter((candidate) => {
-      const haystack = [
-        candidate.fullName,
-        candidate.email,
-        candidate.currentRole ?? "",
-        candidate.currentCompany ?? "",
-        candidate.skills.join(" "),
-      ]
+      if (!needle) {
+        return true;
+      }
+
+      const haystack = [candidate.fullName, candidate.currentRole ?? "", candidate.skills.join(" "), candidate.email]
         .join(" ")
         .toLowerCase();
 
-      return haystack.includes(trimmed);
+      return haystack.includes(needle);
     });
-  }, [candidates, query]);
+  }, [boardCandidates, jobFilter, query]);
 
-  const grouped = useMemo(() => {
-    return KANBAN_STAGES.reduce<Record<string, Candidate[]>>((acc, stage) => {
-      acc[stage] = filteredCandidates.filter((candidate) => candidate.currentStage === stage);
-      return acc;
-    }, {});
-  }, [filteredCandidates]);
+  const groupedCandidates = useMemo(() => groupByStage(filteredCandidates), [filteredCandidates]);
 
-  const STAGE_COLORS: Record<string, { badge: string; border: string }> = {
-    SOURCING: { badge: "bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300", border: "" },
-    SCREENING: { badge: "bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300", border: "border-t-4 border-blue-500" },
-    TECHNICAL_L1: { badge: "bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300", border: "border-t-4 border-indigo-500" },
-    TECHNICAL_L2: { badge: "bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300", border: "border-t-4 border-purple-500" },
-    CULTURE_FIT: { badge: "bg-pink-100 dark:bg-pink-900/50 text-pink-700 dark:text-pink-300", border: "border-t-4 border-pink-500" },
-    OFFER_EXTENDED: { badge: "bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300", border: "border-t-4 border-green-500" },
+  useEffect(() => {
+    setBoardCandidates(candidates);
+  }, [candidates]);
+
+  const moveCandidate = async (candidateId: string, stage: PipelineStage): Promise<void> => {
+    const previousState = boardCandidates;
+
+    setBoardCandidates((current) =>
+      current.map((candidate) =>
+        candidate.id === candidateId
+          ? {
+            ...candidate,
+            currentStage: stage,
+          }
+          : candidate,
+      ),
+    );
+
+    try {
+      const response = await fetch(`/api/candidates/${candidateId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ stage }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to move candidate");
+      }
+    } catch {
+      setBoardCandidates(previousState);
+    }
   };
 
+  const metrics = useMemo(() => {
+    const activePipeline = boardCandidates.filter(
+      (candidate) =>
+        candidate.currentStage !== "HIRED" &&
+        candidate.currentStage !== "REJECTED" &&
+        candidate.currentStage !== "WITHDRAWN",
+    ).length;
+    const hiredCount = boardCandidates.filter((candidate) => candidate.currentStage === "HIRED").length;
+
+    return {
+      totalCandidates: boardCandidates.length,
+      activePipeline,
+      hiredCount,
+    };
+  }, [boardCandidates]);
+
   return (
-    <>
-      <header className="h-16 bg-white dark:bg-surface-dark border-b border-gray-200 dark:border-gray-800 flex items-center justify-between px-6 z-10 flex-shrink-0">
-        <div className="flex items-center gap-4">
-          <h1 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-            <span className="text-gray-400 font-normal">Pipeline /</span>
-            All Candidates
-          </h1>
+    <div className="space-y-3.5">
+      <section className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-0.5">
+        <div>
+          <h1 className="text-[18px] font-bold tracking-tight text-slate-800">Pipeline</h1>
+          <p className="mt-0.5 text-[10px] font-medium text-slate-400">Track and manage your recruitment pipeline.</p>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="relative">
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">search</span>
+
+        <div className="flex items-center justify-end gap-3 flex-1">
+          <label className="relative block w-full sm:max-w-[220px]">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-slate-300" />
             <input
-              className="pl-9 pr-4 py-1.5 text-sm bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent outline-none w-64 transition-all"
-              placeholder="Search candidates..."
-              type="text"
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search..."
+              className="h-9 w-full rounded-lg border border-slate-200/60 bg-white pl-8 pr-3 text-[12px] font-medium text-slate-800 outline-none transition-shadow placeholder:text-slate-400 focus:border-slate-400 focus:shadow-sm"
+            />
+          </label>
+
+          {canCreateCandidate ? (
+            <Link
+              href="/candidates/new"
+              className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 text-[11px] font-bold text-white shadow-sm transition-all hover:bg-slate-800 hover:shadow-md uppercase tracking-wider"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Add Candidate
+            </Link>
+          ) : null}
+
+          <div className="flex items-center ml-1 border-l border-slate-100 pl-4">
+            <CandidatesOverviewMetrics
+              totalCandidates={metrics.totalCandidates}
+              activePipeline={metrics.activePipeline}
+              hiredCount={metrics.hiredCount}
             />
           </div>
         </div>
-      </header>
+      </section>
 
-      <div className="flex-1 overflow-x-auto overflow-y-hidden p-6 bg-gray-50 dark:bg-background-dark">
-        <div className="flex h-full gap-6 min-w-max">
-          {KANBAN_STAGES.map((stage) => {
-            const colors = STAGE_COLORS[stage] || STAGE_COLORS.SOURCING;
-            const stageCandidates = grouped[stage] ?? [];
-
-            return (
-              <div key={stage} className="flex flex-col w-80 h-full">
-                <div className="flex items-center justify-between mb-4 px-1">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-semibold text-gray-700 dark:text-gray-200">{STAGE_LABELS[stage]}</h3>
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${colors.badge}`}>
-                      {stageCandidates.length}
-                    </span>
-                  </div>
-                  <button className="text-gray-400 hover:text-gray-600 transition-colors">
-                    <span className="material-symbols-outlined text-sm">more_horiz</span>
-                  </button>
-                </div>
-
-                <div className={`flex-1 bg-gray-100/50 dark:bg-gray-800/30 rounded-xl p-2 overflow-y-auto space-y-3 scrollbar-hide ${colors.border}`}>
-                  {stageCandidates.map((candidate) => (
-                    <CandidateCard key={candidate.id} candidate={candidate} job={jobMap.get(candidate.jobId)} />
-                  ))}
-                  <button className="mt-3 w-full py-2 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg text-sm font-medium text-gray-500 hover:border-gray-400 hover:text-gray-600 transition flex items-center justify-center gap-2">
-                    <span className="material-symbols-outlined text-sm">add</span> New Lead
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-
-          <div className="flex flex-col w-80 h-full opacity-60 hover:opacity-100 transition-opacity">
-            <div className="flex items-center justify-between mb-4 px-1">
-              <div className="flex items-center gap-2">
-                <h3 className="font-semibold text-gray-700 dark:text-gray-200">Hired / Rejected</h3>
-                <span className="bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded-full text-xs font-medium">Archived</span>
-              </div>
-            </div>
-            <div className="flex-1 bg-gray-100/30 dark:bg-gray-800/30 rounded-xl p-2 border-2 border-dashed border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center text-center">
-              <div className="h-12 w-12 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-2">
-                <span className="material-symbols-outlined text-gray-400">inventory_2</span>
-              </div>
-              <p className="text-sm font-medium text-gray-900 dark:text-white">Archived</p>
-              <p className="text-xs text-gray-500 mb-4">View past hires for these roles</p>
-              <button className="text-primary text-xs font-medium hover:underline">View History</button>
-            </div>
+      <section className="border-b border-slate-100 bg-white/30 py-1 mb-2">
+        <div className="flex flex-wrap items-center gap-1">
+          <div className="inline-flex items-center gap-1.5 rounded px-2 py-1 text-[9px] font-bold uppercase tracking-widest text-slate-400">
+            <SlidersHorizontal className="h-3 w-3" />
+            <span>Filter</span>
           </div>
 
+          <select
+            value={jobFilter}
+            onChange={(event) => setJobFilter(event.target.value)}
+            className="rounded border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-bold text-slate-600 outline-none transition-colors hover:border-slate-300 focus:border-slate-400"
+          >
+            <option value="ALL">Role: All Open Roles</option>
+            {jobs.map((job) => (
+              <option key={job.id} value={job.id}>
+                {job.title}
+              </option>
+            ))}
+          </select>
+
+          <button
+            type="button"
+            onClick={() => {
+              setJobFilter("ALL");
+              setQuery("");
+            }}
+            className="px-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 transition-colors hover:text-slate-600"
+          >
+            Clear
+          </button>
         </div>
-      </div>
-    </>
+      </section>
+
+      <section className="overflow-x-auto pb-4">
+        <div className="flex min-w-max gap-6">
+          {KANBAN_STAGES.map((stage) => (
+            <KanbanColumn
+              key={stage}
+              stage={stage}
+              candidates={groupedCandidates[stage]}
+              jobsById={jobsById}
+              isDropTarget={dropStage === stage}
+              onDragStart={(candidateId) => {
+                setDraggingCandidateId(candidateId);
+              }}
+              onDragEnd={() => {
+                setDraggingCandidateId(null);
+                setDropStage(null);
+              }}
+              onDragOver={(targetStage) => {
+                setDropStage(targetStage);
+              }}
+              onDrop={async (targetStage) => {
+                if (!draggingCandidateId) {
+                  return;
+                }
+
+                const candidate = boardCandidates.find((item) => item.id === draggingCandidateId);
+                if (!candidate || candidate.currentStage === targetStage) {
+                  setDraggingCandidateId(null);
+                  setDropStage(null);
+                  return;
+                }
+
+                await moveCandidate(draggingCandidateId, targetStage);
+                setDraggingCandidateId(null);
+                setDropStage(null);
+              }}
+            />
+          ))}
+        </div>
+      </section>
+    </div>
   );
 }

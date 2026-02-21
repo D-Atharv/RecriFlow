@@ -1,12 +1,34 @@
 import "server-only";
 
 import { nowIso } from "@/lib/dates";
+import { getDefaultInterviewPlan } from "@/lib/interview-plan";
+import { prisma } from "@/lib/prisma";
+import { syncCandidateToSheets } from "@/lib/sheets";
 import { NotFoundError, ValidationError } from "@/server/errors";
 import { jobsRepository } from "@/server/repositories/jobs.repository";
 import { validateCreateJobInput, validateUpdateJobInput } from "@/server/validators/jobs.validator";
 import type { CreateJobInput, Job, UpdateJobInput } from "@/types/domain";
 
 class JobsService {
+  private async syncJobCandidatesToSheets(jobId: string): Promise<void> {
+    const candidates = await prisma.candidate.findMany({
+      where: {
+        job_id: jobId,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    await Promise.all(
+      candidates.map((candidate) =>
+        syncCandidateToSheets(candidate.id).catch((error) => {
+          console.error(`Job close candidate sync failed for ${candidate.id}`, error);
+        }),
+      ),
+    );
+  }
+
   async listJobs(): Promise<Job[]> {
     return jobsRepository.list();
   }
@@ -44,6 +66,8 @@ class JobsService {
       title: input.title,
       department: input.department,
       description: input.description,
+      coreResponsibilities: input.core_responsibilities,
+      interviewPlan: input.interview_plan.length > 0 ? input.interview_plan : getDefaultInterviewPlan(),
       requiredSkills: input.required_skills,
       experienceMin: input.experience_min,
       experienceMax: input.experience_max,
@@ -68,6 +92,8 @@ class JobsService {
       title: input.title ?? existing.title,
       department: input.department ?? existing.department,
       description: input.description ?? existing.description,
+      coreResponsibilities: input.core_responsibilities ?? existing.coreResponsibilities,
+      interviewPlan: input.interview_plan ?? existing.interviewPlan,
       requiredSkills: input.required_skills ?? existing.requiredSkills,
       experienceMin: input.experience_min ?? existing.experienceMin,
       experienceMax: input.experience_max ?? existing.experienceMax,
@@ -77,6 +103,12 @@ class JobsService {
 
     if (!updated) {
       throw new NotFoundError("Job not found");
+    }
+
+    if (existing.status !== updated.status && updated.status === "CLOSED") {
+      this.syncJobCandidatesToSheets(updated.id).catch((error) => {
+        console.error(`Job close sync failed for ${updated.id}`, error);
+      });
     }
 
     return updated;

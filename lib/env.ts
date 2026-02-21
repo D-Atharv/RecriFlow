@@ -51,10 +51,12 @@ export const env = {
   PARSER_API_KEY: asString(process.env.PARSER_API_KEY),
 
   GOOGLE_SHEET_ID: asString(process.env.GOOGLE_SHEET_ID),
+  GOOGLE_SHEET_TAB_NAME: asString(process.env.GOOGLE_SHEET_TAB_NAME, "Pipeline"),
   GOOGLE_SERVICE_ACCOUNT_KEY: asString(process.env.GOOGLE_SERVICE_ACCOUNT_KEY),
+  GOOGLE_SERVICE_ACCOUNT_KEY_BASE64: asString(process.env.GOOGLE_SERVICE_ACCOUNT_KEY_BASE64),
 
   RESEND_API_KEY: asString(process.env.RESEND_API_KEY),
-  EMAIL_FROM: asString(process.env.EMAIL_FROM, "TalentLens <noreply@talentlens.local>"),
+  EMAIL_FROM: asString(process.env.EMAIL_FROM, "RecriFlow <noreply@recriflow.local>"),
 };
 
 export function requireEnvValue(value: string, key: string): string {

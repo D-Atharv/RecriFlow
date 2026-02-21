@@ -10,11 +10,9 @@ interface AppShellProps {
 
 export function AppShell({ user, children }: AppShellProps) {
   return (
-    <div className="h-screen w-full flex flex-col bg-background-light dark:bg-background-dark text-gray-900 dark:text-gray-100 font-sans antialiased overflow-hidden">
+    <div className="min-h-screen w-full bg-background-light text-gray-900">
       <GlobalNav user={user} />
-      <main className="flex-1 flex flex-col h-full overflow-hidden relative">
-        {children}
-      </main>
+      <main className="mx-auto w-full max-w-[1600px] px-10 pb-6 pt-3">{children}</main>
     </div>
   );
 }

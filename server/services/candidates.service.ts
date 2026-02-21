@@ -56,6 +56,12 @@ function ensureCanManageCandidates(user: SessionUser): void {
   }
 }
 
+function ensureCanEditCandidateNotes(user: SessionUser): void {
+  if (!["ADMIN", "RECRUITER", "HIRING_MANAGER"].includes(user.role)) {
+    throw new ForbiddenError("You do not have access to edit candidate notes");
+  }
+}
+
 class CandidatesService {
   async listCandidates(filters: CandidateFilters = {}): Promise<Candidate[]> {
     const records = await prisma.candidate.findMany({
@@ -123,7 +129,9 @@ class CandidatesService {
     });
 
     if (existing) {
-      throw new ConflictError("A candidate with this email already exists");
+      throw new ConflictError("A candidate with this email already exists", {
+        existing_id: existing.id,
+      });
     }
 
     const job = await jobsRepository.findById(input.job_id);
@@ -147,7 +155,7 @@ class CandidatesService {
         resume_raw_text: input.resume_raw_text,
         linkedin_url: input.linkedin_url ?? null,
         source: input.source,
-        current_stage: "APPLIED",
+        current_stage: input.current_stage ?? "APPLIED",
         job_id: input.job_id,
         recruiter_id: actor.id,
         notes: input.notes ?? null,
@@ -183,6 +191,27 @@ class CandidatesService {
     return toDomainCandidate(updated);
   }
 
+  async updateCandidateNotes(id: string, notes: string | null, actor: SessionUser): Promise<Candidate> {
+    ensureCanEditCandidateNotes(actor);
+
+    await this.getCandidateByIdOrThrow(id);
+
+    const updated = await prisma.candidate.update({
+      where: { id },
+      data: {
+        notes,
+        updated_at: new Date(),
+      },
+      ...candidateWithRelationsArgs,
+    });
+
+    syncCandidateToSheets(updated.id).catch((error) => {
+      console.error("Candidate notes sync failed", error);
+    });
+
+    return toDomainCandidate(updated);
+  }
+
   async deleteCandidate(id: string, actor: SessionUser): Promise<void> {
     ensureCanManageCandidates(actor);
 
@@ -204,7 +233,9 @@ class CandidatesService {
   }
 
   async createRound(candidateId: string, payload: unknown, actor: SessionUser): Promise<InterviewRound> {
-    ensureCanManageCandidates(actor);
+    if (!["ADMIN", "RECRUITER", "INTERVIEWER", "HIRING_MANAGER"].includes(actor.role)) {
+      throw new ForbiddenError("You do not have permission to create interview rounds");
+    }
 
     const validation = validateCreateRoundInput(payload);
     if (Object.keys(validation.issues).length > 0) {
@@ -230,7 +261,7 @@ class CandidatesService {
     }
 
     const interviewer = await usersRepository.findById(input.interviewer_id);
-    if (!interviewer || !interviewer.isActive || interviewer.role !== "INTERVIEWER") {
+    if (!interviewer || !interviewer.isActive) {
       throw new ValidationError("Round validation failed", {
         interviewer_id: "Assigned interviewer is invalid.",
       });

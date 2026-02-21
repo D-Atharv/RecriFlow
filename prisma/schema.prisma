@@ -107,6 +107,8 @@ model Job {
   title           String
   department      String
   description     String    @db.Text
+  core_responsibilities String[] @default([])
+  interview_plan  Json      @default("[]")
   required_skills String[]
   experience_min  Float
   experience_max  Float

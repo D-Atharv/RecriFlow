@@ -17,6 +17,7 @@
    - [Issue 5 — No streaming / Suspense boundaries](#issue-5--no-streaming--suspense-boundaries)
    - [Issue 6 — Redundant data fetching across pages](#issue-6--redundant-data-fetching-across-pages)
    - [Issue 7 — Serverless cold starts with small connection pool](#issue-7--serverless-cold-starts-with-small-connection-pool)
+   - [Issue 8 — Sequential awaits waterfall on detail pages](#issue-8--sequential-awaits-waterfall-on-detail-pages)
 3. [Solutions Implemented](#3-solutions-implemented)
    - [Fix 1 — Remove `force-dynamic`](#fix-1--remove-force-dynamic)
    - [Fix 2 — Re-enable link prefetching](#fix-2--re-enable-link-prefetching)
@@ -24,6 +25,7 @@
    - [Fix 4 — Lean list queries (split heavy/light projections)](#fix-4--lean-list-queries-split-heavylight-projections)
    - [Fix 5 — Suspense streaming with page-specific skeletons](#fix-5--suspense-streaming-with-page-specific-skeletons)
    - [Fix 6 — Moved `latestRating` computation server-side](#fix-6--moved-latestrating-computation-server-side)
+   - [Fix 7 — Parallel data fetching with `Promise.all` on detail pages](#fix-7--parallel-data-fetching-with-promiseall-on-detail-pages)
 4. [Next.js-Specific Learnings](#4-nextjs-specific-learnings)
    - [`revalidateTag` signature change in Next.js 16](#revalidatetag-signature-change-in-nextjs-16)
    - [`unstable_cache` vs `force-dynamic`](#unstable_cache-vs-force-dynamic)
@@ -197,6 +199,59 @@ On Vercel serverless, each lambda gets its own Pool with max 2 connections. A co
 Combined with no caching and deep JOINs, a cold start could easily exceed 2 seconds.
 
 **Impact:** Intermittent spikes of 2–3 seconds, especially after idle periods.
+
+---
+
+### Issue 8 — Sequential awaits waterfall on detail pages
+
+**Location:** `app/(app)/candidates/[id]/page.tsx`, `app/(app)/jobs/[id]/page.tsx`
+
+**Problem:** Detail pages fetched independent data sources with sequential `await` calls:
+
+```tsx
+// candidates/[id]/page.tsx — BEFORE
+export default async function CandidateDetailPage({ params, searchParams }) {
+  const user = await requireAppUser();
+  const { id } = await params;
+  const resolvedSearchParams = await searchParams;
+
+  const candidate = await getCachedCandidate(id);   // ← Wait for this...
+  if (!candidate) notFound();
+
+  const jobs = await getCachedJobs();                // ← ...then start this
+  const interviewers = canManage
+    ? await getCachedInterviewers()                  // ← ...then start this
+    : [];
+}
+```
+
+```tsx
+// jobs/[id]/page.tsx — BEFORE
+export default async function JobDetailPage({ params }) {
+  const job = await getCachedJob(id);                // ← Wait for this...
+  if (!job) notFound();
+
+  const allCandidates = await getCachedCandidates(); // ← ...then start this
+}
+```
+
+Each `await` blocks the next one from starting. Since `getCachedJobs()` and `getCachedInterviewers()` do not depend on the result of `getCachedCandidate()` (they are independent data sources), there is no reason to wait. The Node.js runtime can issue all queries to the cache layer (or DB on cache miss) simultaneously.
+
+**Waterfall timeline:**
+```
+candidates/[id] — BEFORE:
+  │
+  ├─ getCachedCandidate(id)     ████████  (~5ms cache / ~80ms DB)
+  │                                     ↓ wait for completion
+  ├─ getCachedJobs()                     ████████  (~5ms cache / ~80ms DB)
+  │                                               ↓ wait for completion
+  └─ getCachedInterviewers()                       ████████  (~5ms cache / ~50ms DB)
+
+Total (cache warm):  ~15ms
+Total (cache cold):  ~210ms
+```
+
+**Impact:** On a warm cache the penalty is small (~10ms), but on a cache miss (cold start, post-invalidation, or first request) the three queries become a 3-step waterfall, adding up to **150–250ms** of unnecessary sequential wait time on the critical path of every detail page load.
 
 ---
 
@@ -525,6 +580,64 @@ This eliminated:
 
 ---
 
+### Fix 7 — Parallel data fetching with `Promise.all` on detail pages
+
+**Files changed:** `app/(app)/candidates/[id]/page.tsx`, `app/(app)/jobs/[id]/page.tsx`
+
+All independent data fetches on detail pages were moved into a single `Promise.all` call, allowing the runtime to start all queries simultaneously.
+
+**`candidates/[id]/page.tsx` — After:**
+```tsx
+export default async function CandidateDetailPage({ params, searchParams }) {
+  const user = await requireAppUser();
+  const [{ id }, resolvedSearchParams] = await Promise.all([params, searchParams]);
+
+  const canManage = ["ADMIN", "RECRUITER"].includes(user.role);
+  const canEditNotes = ["ADMIN", "RECRUITER", "HIRING_MANAGER"].includes(user.role);
+
+  // All three queries fire simultaneously
+  const [candidate, jobs, interviewers] = await Promise.all([
+    getCachedCandidate(id),
+    getCachedJobs(),
+    canManage ? getCachedInterviewers() : Promise.resolve([]),
+  ]);
+
+  if (!candidate) notFound();
+  // ...
+}
+```
+
+**`jobs/[id]/page.tsx` — After:**
+```tsx
+export default async function JobDetailPage({ params }) {
+  const user = await requireAppRole([...]);
+  const { id } = await params;
+
+  // Both queries fire simultaneously
+  const [job, allCandidates] = await Promise.all([getCachedJob(id), getCachedCandidates()]);
+
+  if (!job) notFound();
+  // ...
+}
+```
+
+**Parallel timeline:**
+```
+candidates/[id] — AFTER:
+  │
+  ├─ getCachedCandidate(id)     ████████
+  ├─ getCachedJobs()            ████████
+  └─ getCachedInterviewers()    ██████
+                                        ↑ all resolve together
+
+Total (cache warm):  ~5ms (longest individual query)
+Total (cache cold):  ~80ms (longest individual query)
+```
+
+**Saving:** Up to ~170ms on cache-cold detail page loads. Additionally, `params` and `searchParams` (which are Promises in Next.js 15+) are now also awaited in parallel.
+
+---
+
 ## 4. Next.js-Specific Learnings
 
 ### `revalidateTag` signature change in Next.js 16
@@ -734,8 +847,8 @@ This ensures:
 | `app/(app)/dashboard/page.tsx` | Removed `force-dynamic`, added Suspense boundary |
 | `app/(app)/candidates/page.tsx` | Removed `force-dynamic`, added Suspense boundary |
 | `app/(app)/jobs/page.tsx` | Removed `force-dynamic`, added Suspense boundary |
-| `app/(app)/candidates/[id]/page.tsx` | Uses `getCachedCandidate(id)` instead of direct service call |
-| `app/(app)/jobs/[id]/page.tsx` | Uses `getCachedJob(id)` + `getCachedCandidates()` |
+| `app/(app)/candidates/[id]/page.tsx` | Uses `getCachedCandidate(id)` instead of direct service call; all fetches parallelised with `Promise.all` |
+| `app/(app)/jobs/[id]/page.tsx` | Uses `getCachedJob(id)` + `getCachedCandidates()`; both fetches parallelised with `Promise.all` |
 | `app/(app)/settings/page.tsx` | Uses cached queries, removed `force-dynamic` |
 | `app/api/candidates/route.ts` | GET returns lean data; POST calls `invalidateCandidates()` |
 | `app/api/candidates/[id]/route.ts` | PATCH/DELETE call `invalidateCandidate(id)` |

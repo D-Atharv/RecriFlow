@@ -1,6 +1,8 @@
 import { handleRouteError, json } from "@/lib/http";
 import { requireApiUser } from "@/server/auth/guards";
 import { invalidateCandidate } from "@/server/cache/invalidation";
+import { getCachedCandidate } from "@/server/cache/queries";
+import { NotFoundError } from "@/server/errors";
 import { candidatesService } from "@/server/services/candidates.service";
 
 interface RouteContext {
@@ -13,9 +15,10 @@ export async function GET(_: Request, context: RouteContext): Promise<Response> 
   try {
     await requireApiUser();
     const { id } = await context.params;
-    const rounds = await candidatesService.listRounds(id);
+    const candidate = await getCachedCandidate(id);
+    if (!candidate) throw new NotFoundError("Candidate not found");
 
-    return json({ rounds });
+    return json({ rounds: candidate.rounds });
   } catch (error) {
     return handleRouteError(error);
   }

@@ -2,7 +2,8 @@ import { handleRouteError, json } from "@/lib/http";
 import { isValidPipelineStage } from "@/lib/pipeline";
 import { requireApiUser } from "@/server/auth/guards";
 import { invalidateCandidate, invalidateJobs } from "@/server/cache/invalidation";
-import { ValidationError } from "@/server/errors";
+import { getCachedCandidate } from "@/server/cache/queries";
+import { ValidationError, NotFoundError } from "@/server/errors";
 import { candidatesService } from "@/server/services/candidates.service";
 import type { PipelineStage } from "@/types/domain";
 
@@ -16,7 +17,8 @@ export async function GET(_: Request, context: RouteContext): Promise<Response> 
   try {
     await requireApiUser();
     const { id } = await context.params;
-    const candidate = await candidatesService.getCandidateByIdOrThrow(id);
+    const candidate = await getCachedCandidate(id);
+    if (!candidate) throw new NotFoundError("Candidate not found");
 
     return json({ candidate });
   } catch (error) {

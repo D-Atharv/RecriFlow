@@ -1,13 +1,14 @@
 import { handleRouteError, json } from "@/lib/http";
 import { requireApiUser } from "@/server/auth/guards";
 import { invalidateUsers } from "@/server/cache/invalidation";
+import { getCachedUsers } from "@/server/cache/queries";
 import { usersService } from "@/server/services/users.service";
 import type { CreateUserInput } from "@/types/domain";
 
 export async function GET(): Promise<Response> {
   try {
     await requireApiUser(["ADMIN"]);
-    const users = await usersService.listUsers();
+    const users = await getCachedUsers();
 
     return json({ users });
   } catch (error) {

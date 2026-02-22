@@ -1,6 +1,8 @@
 import { handleRouteError, json } from "@/lib/http";
 import { requireApiUser } from "@/server/auth/guards";
 import { invalidateJob, invalidateCandidates } from "@/server/cache/invalidation";
+import { getCachedJob } from "@/server/cache/queries";
+import { NotFoundError } from "@/server/errors";
 import { jobsService } from "@/server/services/jobs.service";
 
 interface RouteContext {
@@ -13,7 +15,8 @@ export async function GET(_: Request, context: RouteContext): Promise<Response> 
   try {
     await requireApiUser();
     const { id } = await context.params;
-    const job = await jobsService.getJobByIdOrThrow(id);
+    const job = await getCachedJob(id);
+    if (!job) throw new NotFoundError("Job not found");
 
     return json({ job });
   } catch (error) {

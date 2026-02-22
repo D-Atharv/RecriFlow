@@ -1,12 +1,13 @@
 import { handleRouteError, json } from "@/lib/http";
 import { requireApiUser } from "@/server/auth/guards";
 import { invalidateJobs } from "@/server/cache/invalidation";
+import { getCachedJobs } from "@/server/cache/queries";
 import { jobsService } from "@/server/services/jobs.service";
 
 export async function GET(): Promise<Response> {
   try {
     await requireApiUser();
-    const jobs = await jobsService.listJobs();
+    const jobs = await getCachedJobs();
 
     return json({ jobs });
   } catch (error) {

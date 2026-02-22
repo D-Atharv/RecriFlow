@@ -5,14 +5,14 @@ import { Mail, MoreVertical, MoveRight, Archive, UserRound } from "lucide-react"
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { getAdvanceStageOptions, STAGE_LABELS } from "@/lib/pipeline";
-import type { Candidate, PipelineStage } from "@/types/domain";
+import type { CandidateListItem, PipelineStage } from "@/types/domain";
 
 interface CandidateActionsMenuProps {
-  candidate: Candidate;
+  candidate: CandidateListItem;
   canManage: boolean;
   disabled?: boolean;
-  onAdvanceStage: (candidate: Candidate, nextStage: PipelineStage) => Promise<void>;
-  onArchiveCandidate: (candidate: Candidate) => Promise<void>;
+  onAdvanceStage: (candidate: CandidateListItem, nextStage: PipelineStage) => Promise<void>;
+  onArchiveCandidate: (candidate: CandidateListItem) => Promise<void>;
 }
 
 export function CandidateActionsMenu({

@@ -1,10 +1,7 @@
 import { SettingsWorkspace } from "@/components/settings/settings-workspace";
 import type { SettingsEnvCheck } from "@/components/settings/types";
 import { requireAppRole } from "@/server/auth/guards";
-import { settingsService } from "@/server/services/settings.service";
-import { usersService } from "@/server/services/users.service";
-
-export const dynamic = "force-dynamic";
+import { getCachedUsers, getCachedSyncLogs, getCachedRejections } from "@/server/cache/queries";
 
 const ENV_CHECKS: SettingsEnvCheck[] = [
   { key: "DATABASE_URL", configured: Boolean(process.env.DATABASE_URL), note: "Supabase PostgreSQL connection string" },
@@ -35,9 +32,9 @@ const ENV_CHECKS: SettingsEnvCheck[] = [
 export default async function SettingsPage() {
   const currentUser = await requireAppRole(["ADMIN", "RECRUITER", "HIRING_MANAGER", "INTERVIEWER"]);
   const [users, syncLogs, rejections] = await Promise.all([
-    usersService.listUsers(),
-    settingsService.listSyncLogs(),
-    settingsService.listRejections(),
+    getCachedUsers(),
+    getCachedSyncLogs(),
+    getCachedRejections(),
   ]);
 
   return (

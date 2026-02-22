@@ -1,4 +1,4 @@
-import { PIPELINE_STAGES, type Candidate, type Job, type PipelineStage, type User } from "@/types/domain";
+import { PIPELINE_STAGES, type CandidateListItem, type Job, type PipelineStage, type User } from "@/types/domain";
 import type { JobListItem, JobsOverviewMetrics } from "@/components/jobs/list/types";
 
 function getInitials(fullName: string): string {
@@ -50,7 +50,7 @@ function emptyStageCounts(): Record<PipelineStage, number> {
 
 export function buildJobListItems(params: {
   jobs: Job[];
-  candidates: Candidate[];
+  candidates: CandidateListItem[];
   users: User[];
 }): JobListItem[] {
   const usersById = new Map(params.users.map((user) => [user.id, user]));

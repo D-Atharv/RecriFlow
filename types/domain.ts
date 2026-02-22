@@ -165,6 +165,38 @@ export interface Candidate {
   rejection: RejectionReason | null;
 }
 
+/**
+ * Lightweight candidate projection for list views (dashboard, candidates table, jobs).
+ *
+ * Excludes heavy nested relations (`rounds`, `rejection`) and large text blobs
+ * (`resumeRawText`) that list views never render. The `latestRating` is
+ * pre-computed server-side so the client does not need `rounds` at all.
+ */
+export interface CandidateListItem {
+  id: string;
+  fullName: string;
+  email: string;
+  phone: string | null;
+  currentRole: string | null;
+  currentCompany: string | null;
+  totalExperienceYrs: number | null;
+  skills: string[];
+  resumeUrl: string;
+  linkedinUrl: string | null;
+  source: CandidateSource;
+  currentStage: PipelineStage;
+  stageUpdatedAt: string;
+  jobId: string;
+  recruiterId: string;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+  /** Best overall rating from the most recent completed round (null if none). */
+  latestRating: number | null;
+  /** Total number of interview rounds scheduled/completed. */
+  roundCount: number;
+}
+
 export interface SyncLog {
   id: string;
   candidateId: string;

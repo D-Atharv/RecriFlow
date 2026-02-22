@@ -8,9 +8,7 @@ import { CandidateResumeViewer } from "@/components/candidates/detail/candidate-
 import { CandidateSnapshotCard } from "@/components/candidates/detail/candidate-snapshot-card";
 import { CandidateFeedbackViewManager } from "@/components/candidates/detail/feedback-history/candidate-feedback-view-manager";
 import { requireAppUser } from "@/server/auth/guards";
-import { candidatesService } from "@/server/services/candidates.service";
-import { jobsService } from "@/server/services/jobs.service";
-import { usersService } from "@/server/services/users.service";
+import { getCachedCandidate, getCachedJobs, getCachedInterviewers } from "@/server/cache/queries";
 
 interface CandidateDetailPageProps {
   params: Promise<{
@@ -20,8 +18,6 @@ interface CandidateDetailPageProps {
     view?: string;
   }>;
 }
-
-export const dynamic = "force-dynamic";
 
 const CANDIDATE_DETAIL_VIEWS = ["overall", "snapshot", "resume", "timeline", "feedback", "notes"] as const;
 type CandidateDetailView = (typeof CANDIDATE_DETAIL_VIEWS)[number];
@@ -40,7 +36,7 @@ export default async function CandidateDetailPage({ params, searchParams }: Cand
   const user = await requireAppUser();
   const { id } = await params;
   const resolvedSearchParams = await searchParams;
-  const candidate = await candidatesService.getCandidateById(id);
+  const candidate = await getCachedCandidate(id);
 
   if (!candidate) {
     notFound();
@@ -50,8 +46,8 @@ export default async function CandidateDetailPage({ params, searchParams }: Cand
 
   const canManage = ["ADMIN", "RECRUITER"].includes(user.role);
   const canEditNotes = ["ADMIN", "RECRUITER", "HIRING_MANAGER"].includes(user.role);
-  const jobs = await jobsService.listJobs();
-  const interviewers = canManage ? await usersService.listInterviewers() : [];
+  const jobs = await getCachedJobs();
+  const interviewers = canManage ? await getCachedInterviewers() : [];
   const job = jobs.find((item) => item.id === candidate.jobId);
   const appliedRole = job?.title ?? candidate.currentRole ?? "Unassigned role";
   const department = job?.department ?? "No department";

@@ -1,5 +1,6 @@
 import { handleRouteError, json } from "@/lib/http";
 import { requireApiUser } from "@/server/auth/guards";
+import { invalidateCandidate } from "@/server/cache/invalidation";
 import { candidatesService } from "@/server/services/candidates.service";
 
 interface RouteContext {
@@ -27,6 +28,8 @@ export async function POST(request: Request, context: RouteContext): Promise<Res
     const payload = await request.json();
 
     const round = await candidatesService.createRound(id, payload, actor);
+
+    invalidateCandidate(id);
 
     return json({ round }, 201);
   } catch (error) {

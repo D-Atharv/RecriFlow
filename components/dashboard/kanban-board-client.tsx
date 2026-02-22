@@ -7,19 +7,19 @@ import { useEffect, useMemo, useState } from "react";
 import { KanbanColumn } from "@/components/dashboard/kanban/kanban-column";
 import { CandidatesOverviewMetrics } from "@/components/candidates/list/candidates-overview-metrics";
 import { KANBAN_STAGES } from "@/lib/pipeline";
-import type { Candidate, Job, PipelineStage } from "@/types/domain";
+import type { CandidateListItem, Job, PipelineStage } from "@/types/domain";
 
 interface KanbanBoardClientProps {
-  candidates: Candidate[];
+  candidates: CandidateListItem[];
   jobs: Job[];
   canCreateCandidate: boolean;
 }
 
-function groupByStage(candidates: Candidate[]): Record<PipelineStage, Candidate[]> {
-  return KANBAN_STAGES.reduce<Record<PipelineStage, Candidate[]>>((acc, stage) => {
+function groupByStage(candidates: CandidateListItem[]): Record<PipelineStage, CandidateListItem[]> {
+  return KANBAN_STAGES.reduce<Record<PipelineStage, CandidateListItem[]>>((acc, stage) => {
     acc[stage] = candidates.filter((candidate) => candidate.currentStage === stage);
     return acc;
-  }, {} as Record<PipelineStage, Candidate[]>);
+  }, {} as Record<PipelineStage, CandidateListItem[]>);
 }
 
 export function KanbanBoardClient({ candidates, jobs, canCreateCandidate }: KanbanBoardClientProps) {

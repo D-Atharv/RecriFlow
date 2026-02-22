@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { sendCandidateRejectedEmail, sendFeedbackSubmittedEmail, sendInterviewerAssignmentEmail } from "@/lib/email";
 import { syncCandidateToSheets } from "@/lib/sheets";
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "@/server/errors";
-import { candidateWithRelationsArgs, roundWithRelationsArgs, toDomainCandidate, toDomainFeedback, toDomainRound } from "@/server/repositories/mappers";
+import { candidateListArgs, candidateWithRelationsArgs, roundWithRelationsArgs, toDomainCandidate, toDomainCandidateListItem, toDomainFeedback, toDomainRound } from "@/server/repositories/mappers";
 import { jobsRepository } from "@/server/repositories/jobs.repository";
 import { usersRepository } from "@/server/repositories/users.repository";
 import { validateCreateCandidateInput } from "@/server/validators/candidates.validator";
@@ -13,6 +13,7 @@ import type { SessionUser } from "@/types/auth";
 import type {
   Candidate,
   CandidateFilters,
+  CandidateListItem,
   Feedback,
   InterviewRound,
   PipelineStage,
@@ -35,7 +36,10 @@ function roundTypeToStage(roundType: RoundType): PipelineStage {
   return ROUND_STAGE_MAP[roundType];
 }
 
-function filterByQuery(candidate: Candidate, query: string): boolean {
+function filterByQuery(
+  candidate: Pick<Candidate, "fullName" | "email" | "currentRole" | "currentCompany" | "skills">,
+  query: string,
+): boolean {
   const lowered = query.toLowerCase();
 
   return [
@@ -74,6 +78,31 @@ class CandidatesService {
     return records
       .map(toDomainCandidate)
       .filter((candidate: Candidate) => {
+        if (filters.query && !filterByQuery(candidate, filters.query)) {
+          return false;
+        }
+
+        if (filters.stage && candidate.currentStage !== filters.stage) {
+          return false;
+        }
+
+        if (filters.jobId && candidate.jobId !== filters.jobId) {
+          return false;
+        }
+
+        return true;
+      });
+  }
+
+  async listCandidatesLean(filters: CandidateFilters = {}): Promise<CandidateListItem[]> {
+    const records = await prisma.candidate.findMany({
+      ...candidateListArgs,
+      orderBy: { created_at: "desc" },
+    });
+
+    return records
+      .map(toDomainCandidateListItem)
+      .filter((candidate: CandidateListItem) => {
         if (filters.query && !filterByQuery(candidate, filters.query)) {
           return false;
         }

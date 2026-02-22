@@ -1,8 +1,7 @@
-import { revalidatePath } from "next/cache";
-
 import { handleRouteError, json } from "@/lib/http";
 import { isValidPipelineStage } from "@/lib/pipeline";
 import { requireApiUser } from "@/server/auth/guards";
+import { invalidateCandidate, invalidateJobs } from "@/server/cache/invalidation";
 import { ValidationError } from "@/server/errors";
 import { candidatesService } from "@/server/services/candidates.service";
 import type { PipelineStage } from "@/types/domain";
@@ -65,11 +64,8 @@ export async function PATCH(request: Request, context: RouteContext): Promise<Re
     }
 
     if (candidate) {
-      revalidatePath("/dashboard");
-      revalidatePath("/candidates");
-      revalidatePath(`/candidates/${candidate.id}`);
-      revalidatePath("/jobs");
-      revalidatePath(`/jobs/${candidate.jobId}`);
+      invalidateCandidate(candidate.id);
+      invalidateJobs();
     }
 
     return json({ candidate });
@@ -84,6 +80,9 @@ export async function DELETE(_: Request, context: RouteContext): Promise<Respons
     const { id } = await context.params;
 
     await candidatesService.deleteCandidate(id, user);
+
+    invalidateCandidate(id);
+    invalidateJobs();
 
     return new Response(null, { status: 204 });
   } catch (error) {

@@ -12,6 +12,7 @@ import type {
 import type { AuthUserRecord } from "@/types/auth";
 import type {
   Candidate,
+  CandidateListItem,
   Feedback,
   InterviewPlanStep,
   InterviewPlanStepKind,
@@ -41,6 +42,31 @@ export const candidateWithRelationsArgs = {
 } as const satisfies Prisma.CandidateDefaultArgs;
 
 export type CandidateWithRelations = Prisma.CandidateGetPayload<typeof candidateWithRelationsArgs>;
+
+// ---------------------------------------------------------------------------
+// Lean list query — avoids loading interviewer, feedback text, rejection
+// ---------------------------------------------------------------------------
+
+export const candidateListArgs = {
+  include: {
+    interview_rounds: {
+      select: {
+        status: true,
+        updated_at: true,
+        feedback: {
+          select: {
+            overall_rating: true,
+          },
+        },
+      },
+      orderBy: {
+        round_number: "desc" as const,
+      },
+    },
+  },
+} as const satisfies Prisma.CandidateDefaultArgs;
+
+export type CandidateForList = Prisma.CandidateGetPayload<typeof candidateListArgs>;
 
 export const roundWithRelationsArgs = {
   include: {
@@ -270,5 +296,40 @@ export function toDomainRoundFromPrisma(
     createdAt: toIso(round.created_at),
     updatedAt: toIso(round.updated_at),
     feedback,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Lean list mapper
+// ---------------------------------------------------------------------------
+
+export function toDomainCandidateListItem(record: CandidateForList): CandidateListItem {
+  const completedWithFeedback = record.interview_rounds
+    .filter((r) => r.status === "COMPLETED" && r.feedback !== null)
+    .sort((a, b) => b.updated_at.getTime() - a.updated_at.getTime());
+
+  const latestRating = completedWithFeedback[0]?.feedback?.overall_rating ?? null;
+
+  return {
+    id: record.id,
+    fullName: record.full_name,
+    email: record.email,
+    phone: record.phone,
+    currentRole: record.current_role,
+    currentCompany: record.current_company,
+    totalExperienceYrs: record.total_experience_yrs,
+    skills: record.skills,
+    resumeUrl: record.resume_url,
+    linkedinUrl: record.linkedin_url,
+    source: record.source,
+    currentStage: record.current_stage,
+    stageUpdatedAt: toIso(record.updated_at),
+    jobId: record.job_id,
+    recruiterId: record.recruiter_id,
+    notes: record.notes,
+    createdAt: toIso(record.created_at),
+    updatedAt: toIso(record.updated_at),
+    latestRating,
+    roundCount: record.interview_rounds.length,
   };
 }

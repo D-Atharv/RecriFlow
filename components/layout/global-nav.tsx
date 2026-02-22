@@ -36,7 +36,6 @@ export function GlobalNav({ user }: { user: SessionUser }) {
         <div className="flex min-w-0 items-center gap-4">
           <Link
             href="/dashboard"
-            prefetch={false}
             className="flex shrink-0 items-center gap-2 text-slate-900 transition-opacity hover:opacity-90"
           >
             <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900 shadow-sm shadow-slate-900/15 ring-1 ring-slate-800/80">
@@ -55,7 +54,6 @@ export function GlobalNav({ user }: { user: SessionUser }) {
                 <Link
                   key={item.href}
                   href={item.href}
-                  prefetch={false}
                   className={[
                     "inline-flex h-8 items-center rounded-lg px-3 text-[13px] font-medium transition-all duration-200",
                     active

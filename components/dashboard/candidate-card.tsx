@@ -4,10 +4,10 @@ import { AlertTriangle, Move, Star } from "lucide-react";
 import { daysSince } from "@/lib/dates";
 import { stageAgeTone } from "@/lib/pipeline";
 import { STAGE_THEME } from "@/components/dashboard/kanban/stage-theme";
-import type { Candidate, Job } from "@/types/domain";
+import type { CandidateListItem, Job } from "@/types/domain";
 
 interface CandidateCardProps {
-  candidate: Candidate;
+  candidate: CandidateListItem;
   job?: Job;
   draggable?: boolean;
   onDragStart?: (candidateId: string) => void;
@@ -62,7 +62,7 @@ function formatCreatedAgo(isoDate: string): string {
   return `Added ${days} days ago`;
 }
 
-function candidateSummary(candidate: Candidate, job?: Job): string {
+function candidateSummary(candidate: CandidateListItem, job?: Job): string {
   if (candidate.notes?.trim()) {
     return candidate.notes.trim();
   }

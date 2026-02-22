@@ -9,44 +9,30 @@ import { CandidatesDataTable } from "@/components/candidates/list/candidates-dat
 import { CandidatesFilterBar } from "@/components/candidates/list/candidates-filter-bar";
 import { CandidatesGrid } from "@/components/candidates/list/candidates-grid";
 import { CandidatesOverviewMetrics } from "@/components/candidates/list/candidates-overview-metrics";
-import type { Candidate, Job, PipelineStage } from "@/types/domain";
+import type { CandidateListItem, Job, PipelineStage } from "@/types/domain";
 
 interface CandidatesTableClientProps {
-  candidates: Candidate[];
+  candidates: CandidateListItem[];
   jobs: Job[];
   canManage: boolean;
 }
 
-function normalizeCandidate(candidate: Candidate): Candidate {
+function normalizeCandidateListItem(candidate: CandidateListItem): CandidateListItem {
   return {
     ...candidate,
     skills: Array.isArray(candidate.skills) ? candidate.skills : [],
-    rounds: Array.isArray(candidate.rounds) ? candidate.rounds : [],
   };
-}
-
-function getLatestRating(candidate: Candidate): number | null {
-  const completedRounds = (candidate.rounds ?? []).filter((round) => round.feedback);
-  if (completedRounds.length === 0) {
-    return null;
-  }
-
-  const latest = completedRounds
-    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-    .at(0);
-
-  return latest?.feedback?.overallRating ?? null;
 }
 
 export function CandidatesTableClient({ candidates, jobs, canManage }: CandidatesTableClientProps) {
   const router = useRouter();
-  const normalizedCandidates = useMemo(() => candidates.map(normalizeCandidate), [candidates]);
+  const normalizedCandidates = useMemo(() => candidates.map(normalizeCandidateListItem), [candidates]);
   const [query, setQuery] = useState("");
   const [stage, setStage] = useState<string>("ALL");
   const [source, setSource] = useState<string>("ALL");
   const [viewMode, setViewMode] = useState<"table" | "grid">("table");
   const [actionError, setActionError] = useState<string | null>(null);
-  const [candidatesState, setCandidatesState] = useState<Candidate[]>(normalizedCandidates);
+  const [candidatesState, setCandidatesState] = useState<CandidateListItem[]>(normalizedCandidates);
 
   useEffect(() => {
     setCandidatesState(normalizedCandidates);
@@ -67,12 +53,12 @@ export function CandidatesTableClient({ candidates, jobs, canManage }: Candidate
           return;
         }
 
-        const payload = (await response.json()) as { candidates?: Candidate[] };
+        const payload = (await response.json()) as { candidates?: CandidateListItem[] };
         if (!mounted || !Array.isArray(payload.candidates)) {
           return;
         }
 
-        setCandidatesState(payload.candidates.map(normalizeCandidate));
+        setCandidatesState(payload.candidates.map(normalizeCandidateListItem));
       } catch (error) {
         if (error instanceof DOMException && error.name === "AbortError") {
           return;
@@ -119,7 +105,7 @@ export function CandidatesTableClient({ candidates, jobs, canManage }: Candidate
       filteredCandidates.map((candidate) => ({
         candidate,
         job: jobMap.get(candidate.jobId),
-        latestRating: getLatestRating(candidate),
+        latestRating: candidate.latestRating,
       })),
     [filteredCandidates, jobMap],
   );
@@ -143,7 +129,7 @@ export function CandidatesTableClient({ candidates, jobs, canManage }: Candidate
   const firstRow = rows.length === 0 ? 0 : 1;
   const lastRow = rows.length;
 
-  const updateCandidateStage = async (candidate: Candidate, nextStage: PipelineStage): Promise<void> => {
+  const updateCandidateStage = async (candidate: CandidateListItem, nextStage: PipelineStage): Promise<void> => {
     setActionError(null);
     const previous = candidatesState;
 
@@ -181,7 +167,7 @@ export function CandidatesTableClient({ candidates, jobs, canManage }: Candidate
     }
   };
 
-  const archiveCandidate = async (candidate: Candidate): Promise<void> => {
+  const archiveCandidate = async (candidate: CandidateListItem): Promise<void> => {
     await updateCandidateStage(candidate, "WITHDRAWN");
   };
 

@@ -4,11 +4,11 @@ import { MoreHorizontal } from "lucide-react";
 import { CandidateCard } from "@/components/dashboard/candidate-card";
 import { STAGE_THEME } from "@/components/dashboard/kanban/stage-theme";
 import { STAGE_LABELS } from "@/lib/pipeline";
-import type { Candidate, Job, PipelineStage } from "@/types/domain";
+import type { CandidateListItem, Job, PipelineStage } from "@/types/domain";
 
 interface KanbanColumnProps {
   stage: PipelineStage;
-  candidates: Candidate[];
+  candidates: CandidateListItem[];
   jobsById: Map<string, Job>;
   isDropTarget: boolean;
   onDragOver: (stage: PipelineStage) => void;

@@ -5,10 +5,10 @@ import { Star, Search } from "lucide-react";
 import { formatDate } from "@/lib/dates";
 import { StatusPill } from "@/components/ui/status-pill";
 import { CandidateActionsMenu } from "@/components/candidates/list/candidate-actions-menu";
-import type { Candidate, Job, PipelineStage } from "@/types/domain";
+import type { CandidateListItem, Job, PipelineStage } from "@/types/domain";
 
 interface CandidateListRow {
-  candidate: Candidate;
+  candidate: CandidateListItem;
   job?: Job;
   latestRating: number | null;
 }
@@ -16,8 +16,8 @@ interface CandidateListRow {
 interface CandidatesDataTableProps {
   rows: CandidateListRow[];
   canManage: boolean;
-  onAdvanceStage: (candidate: Candidate, stage: PipelineStage) => Promise<void>;
-  onArchiveCandidate: (candidate: Candidate) => Promise<void>;
+  onAdvanceStage: (candidate: CandidateListItem, stage: PipelineStage) => Promise<void>;
+  onArchiveCandidate: (candidate: CandidateListItem) => Promise<void>;
 }
 
 function getInitials(fullName: string): string {

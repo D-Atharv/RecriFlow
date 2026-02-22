@@ -1,13 +1,15 @@
-import { KanbanBoardClient } from "@/components/dashboard/kanban-board-client";
-import { requireAppRole } from "@/server/auth/guards";
-import { candidatesService } from "@/server/services/candidates.service";
-import { jobsService } from "@/server/services/jobs.service";
+import { Suspense } from "react";
 
-export const dynamic = "force-dynamic";
+import { requireAppRole } from "@/server/auth/guards";
+import { DashboardContent } from "./_components/dashboard-content";
+import { DashboardSkeleton } from "./_components/dashboard-skeleton";
 
 export default async function DashboardPage() {
   const user = await requireAppRole(["ADMIN", "RECRUITER", "HIRING_MANAGER"]);
-  const [candidates, jobs] = await Promise.all([candidatesService.listCandidates(), jobsService.listJobs()]);
 
-  return <KanbanBoardClient candidates={candidates} jobs={jobs} canCreateCandidate={["ADMIN", "RECRUITER"].includes(user.role)} />;
+  return (
+    <Suspense fallback={<DashboardSkeleton />}>
+      <DashboardContent canCreateCandidate={["ADMIN", "RECRUITER"].includes(user.role)} />
+    </Suspense>
+  );
 }

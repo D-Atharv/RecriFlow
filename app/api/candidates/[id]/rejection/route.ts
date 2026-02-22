@@ -1,5 +1,6 @@
 import { handleRouteError, json } from "@/lib/http";
 import { requireApiUser } from "@/server/auth/guards";
+import { invalidateCandidate, invalidateSettings } from "@/server/cache/invalidation";
 import { candidatesService } from "@/server/services/candidates.service";
 import type { RejectCandidateInput } from "@/types/domain";
 
@@ -14,6 +15,9 @@ export async function POST(request: Request, context: RouteContext): Promise<Res
     const payload = (await request.json()) as RejectCandidateInput;
 
     const candidate = await candidatesService.rejectCandidate(id, payload, actor);
+
+    invalidateCandidate(id);
+    invalidateSettings();
 
     return json({ candidate });
   } catch (error) {

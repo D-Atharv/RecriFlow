@@ -1,5 +1,6 @@
 import { handleRouteError, json } from "@/lib/http";
 import { requireApiUser } from "@/server/auth/guards";
+import { invalidateCandidate, invalidateSettings } from "@/server/cache/invalidation";
 import { candidatesService } from "@/server/services/candidates.service";
 
 interface RouteContext {
@@ -16,6 +17,9 @@ export async function POST(request: Request, context: RouteContext): Promise<Res
     const payload = await request.json();
 
     const feedback = await candidatesService.submitFeedback(id, roundId, payload, actor);
+
+    invalidateCandidate(id);
+    invalidateSettings();
 
     return json({ success: true, feedback_id: feedback.id }, 201);
   } catch (error) {

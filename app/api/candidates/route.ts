@@ -1,8 +1,7 @@
-import { revalidatePath } from "next/cache";
-
 import { handleRouteError, json } from "@/lib/http";
 import { isValidPipelineStage } from "@/lib/pipeline";
 import { requireApiUser } from "@/server/auth/guards";
+import { invalidateCandidate, invalidateCandidates, invalidateJobs } from "@/server/cache/invalidation";
 import { candidatesService } from "@/server/services/candidates.service";
 import type { CandidateFilters } from "@/types/domain";
 
@@ -24,7 +23,7 @@ export async function GET(request: Request): Promise<Response> {
       filters.stage = stage;
     }
 
-    const candidates = await candidatesService.listCandidates(filters);
+    const candidates = await candidatesService.listCandidatesLean(filters);
     return json({ candidates });
   } catch (error) {
     return handleRouteError(error);
@@ -37,11 +36,8 @@ export async function POST(request: Request): Promise<Response> {
     const payload = await request.json();
     const candidate = await candidatesService.createCandidate(payload, user);
 
-    revalidatePath("/dashboard");
-    revalidatePath("/candidates");
-    revalidatePath(`/candidates/${candidate.id}`);
-    revalidatePath("/jobs");
-    revalidatePath(`/jobs/${candidate.jobId}`);
+    invalidateCandidates();
+    invalidateJobs();
 
     return json({ candidate }, 201);
   } catch (error) {

@@ -34,20 +34,22 @@ function getCandidateDetailView(value?: string): CandidateDetailView {
 
 export default async function CandidateDetailPage({ params, searchParams }: CandidateDetailPageProps) {
   const user = await requireAppUser();
-  const { id } = await params;
-  const resolvedSearchParams = await searchParams;
-  const candidate = await getCachedCandidate(id);
+  const [{ id }, resolvedSearchParams] = await Promise.all([params, searchParams]);
+
+  const canManage = ["ADMIN", "RECRUITER"].includes(user.role);
+  const canEditNotes = ["ADMIN", "RECRUITER", "HIRING_MANAGER"].includes(user.role);
+
+  const [candidate, jobs, interviewers] = await Promise.all([
+    getCachedCandidate(id),
+    getCachedJobs(),
+    canManage ? getCachedInterviewers() : Promise.resolve([]),
+  ]);
 
   if (!candidate) {
     notFound();
   }
 
   const activeView = getCandidateDetailView(resolvedSearchParams.view);
-
-  const canManage = ["ADMIN", "RECRUITER"].includes(user.role);
-  const canEditNotes = ["ADMIN", "RECRUITER", "HIRING_MANAGER"].includes(user.role);
-  const jobs = await getCachedJobs();
-  const interviewers = canManage ? await getCachedInterviewers() : [];
   const job = jobs.find((item) => item.id === candidate.jobId);
   const appliedRole = job?.title ?? candidate.currentRole ?? "Unassigned role";
   const department = job?.department ?? "No department";

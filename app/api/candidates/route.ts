@@ -1,7 +1,8 @@
 import { handleRouteError, json } from "@/lib/http";
 import { isValidPipelineStage } from "@/lib/pipeline";
 import { requireApiUser } from "@/server/auth/guards";
-import { invalidateCandidate, invalidateCandidates, invalidateJobs } from "@/server/cache/invalidation";
+import { invalidateCandidates, invalidateJobs } from "@/server/cache/invalidation";
+import { getCachedCandidatesLean } from "@/server/cache/queries";
 import { candidatesService } from "@/server/services/candidates.service";
 import type { CandidateFilters } from "@/types/domain";
 
@@ -23,7 +24,7 @@ export async function GET(request: Request): Promise<Response> {
       filters.stage = stage;
     }
 
-    const candidates = await candidatesService.listCandidatesLean(filters);
+    const candidates = await getCachedCandidatesLean(filters);
     return json({ candidates });
   } catch (error) {
     return handleRouteError(error);
